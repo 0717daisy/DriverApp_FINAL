@@ -12,7 +12,9 @@ import {
   TouchableOpacity,
   onPress,
   Modal,
-  Alert, Button, BackHandler
+  Alert,
+  Button,
+  BackHandler,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import {
@@ -30,17 +32,17 @@ export default function AccountProfileModule({ navigation }) {
   const [text, onChangeText] = React.useState("");
   const [number, onChangeNumber] = React.useState("");
   const [oldPassword, setOldPassword] = useState("");
-    const [newPassword, setNewPassword] = useState("");
-    const [confirmPassword, setConfirmPassword] = useState("");
-
-    const [passwords, setPasswords] = useState({
-      oldPassword: '',
-      newPassword: '',
-      confirmPassword: '',
-      showOldPassword: false,
-      showNewPassword: false,
-      showConfirmPassword: false,
-    });
+  console.log("oldPassword:", oldPassword);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwords, setPasswords] = useState({
+    oldPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+    showOldPassword: false,
+    showNewPassword: false,
+    showConfirmPassword: false,
+  });
 
   const onPressHandler_toMainPage = () => {
     navigation.navigate("TabNavigator");
@@ -52,6 +54,7 @@ export default function AccountProfileModule({ navigation }) {
   };
 
   const [employeeData, setEmployeeData] = useState(null);
+  console.log("employeeData:", employeeData);
 
   useEffect(() => {
     AsyncStorage.getItem("EMPLOYEE_DATA")
@@ -66,16 +69,26 @@ export default function AccountProfileModule({ navigation }) {
       });
   }, []);
   const handleChangePassword = () => {
-    if (oldPassword === employeeData.emp_pass) {
-      if (newPassword === confirmPassword) {
+    console.log("employeeData:", employeeData.emp_pass);
+    if (passwords.oldPassword === employeeData.emp_pass) {
+      if (passwords.newPassword === passwords.confirmPassword) {
         const employeeRef = ref(db, `EMPLOYEES/${employeeData.emp_id}`);
-        update(employeeRef, { emp_pass: newPassword })
+        update(employeeRef, { emp_pass: passwords.newPassword })
           .then(() => {
             Alert.alert("Success", "Password updated successfully");
+            setPasswords({
+              ...passwords,
+              oldPassword: "",
+              newPassword: "",
+              confirmPassword: "",
+            });
           })
           .catch((error) => {
             console.log(error);
-            Alert.alert("Error", "Failed to update password. Please try again.");
+            Alert.alert(
+              "Error",
+              "Failed to update password. Please try again."
+            );
           });
       } else {
         Alert.alert("Error", "New password and confirm password do not match.");
@@ -99,8 +112,42 @@ export default function AccountProfileModule({ navigation }) {
     }
   };
 
+  //available or not available function
+  const updateEmployeeStatus = (empId, status) => {
+    const employeeRef = ref(db, `EMPLOYEES/${empId}`);
+    update(employeeRef, {
+      emp_availability: status,
+    })
+      .then(() => console.log("Employee status updated"))
+      .catch((error) => console.log(error));
+  };
 
+  const onPress = (status) => {
+    if (employeeData) {
+      updateEmployeeStatus(employeeData.emp_id, status);
+    }
+  };
 
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.multiRemove(["customerData", "email", "password"]);
+      // navigate to login screen or any other screen
+
+      Alert.alert("", "Do you want to logout?", [
+        {
+          text: "Yes",
+          onPress: () => {
+            navigation.navigate("Login", { email: "", password: "" });
+          },
+        },
+        {
+          text: "cancel",
+        },
+      ]);
+    } catch (error) {
+      console.log(error);
+    }
+  };
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -113,7 +160,7 @@ export default function AccountProfileModule({ navigation }) {
             ></FontAwesome>
           </View>
           <View style={styles.out}>
-            <TouchableOpacity onPress={onPress}>
+            <TouchableOpacity onPress={handleLogout}>
               <MaterialIcons
                 name="logout"
                 size={18}
@@ -152,72 +199,73 @@ export default function AccountProfileModule({ navigation }) {
                 setEmployeeData({ ...employeeData, emp_contactnum: text })
               }
             />
-            
-            
-        <Text style={styles.title}>Change Password</Text>
-        <TextInput
-        style={styles.input}
-        placeholder="Old Password"
-        secureTextEntry={!passwords.showOldPassword}
-        value={passwords.oldPassword}
-        onChangeText={(text) =>
-          setPasswords({ ...passwords, oldPassword: text })
-        }
-      />
-      <TouchableOpacity
-        style={styles.visibilityToggle1}
-        onPress={() => togglePasswordVisibility('showOldPassword')}
-      >
-        {getVisibilityIcon('showOldPassword')}
-      </TouchableOpacity>
-      <TextInput
-        style={styles.input}
-        placeholder="New Password"
-        secureTextEntry={!passwords.showNewPassword}
-        value={passwords.newPassword}
-        onChangeText={(text) =>
-          setPasswords({ ...passwords, newPassword: text })
-        }
-      />
-      <TouchableOpacity
-        style={styles.visibilityToggle2}
-        onPress={() => togglePasswordVisibility('showNewPassword')}
-      >
-        {getVisibilityIcon('showNewPassword')}
-      </TouchableOpacity>
-      <TextInput
-        style={styles.input}
-        placeholder="Confirm Password"
-        secureTextEntry={!passwords.showConfirmPassword}
-        value={passwords.confirmPassword}
-        onChangeText={(text) =>
-          setPasswords({ ...passwords, confirmPassword: text })
-        }
-      />
-      <TouchableOpacity
-        style={styles.visibilityToggle3}
-        onPress={() => togglePasswordVisibility('showConfirmPassword')}
-      >
-        {getVisibilityIcon('showConfirmPassword')}
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.btn}
-         onPress={handleChangePassword}
->
-      <Text style={styles.txt}>Update Password</Text>
-       </TouchableOpacity>
-      </View>
-            
+
+            <Text style={styles.title}>Change Password</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Old Password"
+              secureTextEntry={!passwords.showOldPassword}
+              value={passwords.oldPassword}
+              onChangeText={(text) =>
+                setPasswords({ ...passwords, oldPassword: text })
+              }
+            />
+            <TouchableOpacity
+              style={styles.visibilityToggle1}
+              onPress={() => togglePasswordVisibility("showOldPassword")}
+            >
+              {getVisibilityIcon("showOldPassword")}
+            </TouchableOpacity>
+            <TextInput
+              style={styles.input}
+              placeholder="New Password"
+              secureTextEntry={!passwords.showNewPassword}
+              value={passwords.newPassword}
+              onChangeText={(text) =>
+                setPasswords({ ...passwords, newPassword: text })
+              }
+            />
+            <TouchableOpacity
+              style={styles.visibilityToggle2}
+              onPress={() => togglePasswordVisibility("showNewPassword")}
+            >
+              {getVisibilityIcon("showNewPassword")}
+            </TouchableOpacity>
+            <TextInput
+              style={styles.input}
+              placeholder="Confirm Password"
+              secureTextEntry={!passwords.showConfirmPassword}
+              value={passwords.confirmPassword}
+              onChangeText={(text) =>
+                setPasswords({ ...passwords, confirmPassword: text })
+              }
+            />
+            <TouchableOpacity
+              style={styles.visibilityToggle3}
+              onPress={() => togglePasswordVisibility("showConfirmPassword")}
+            >
+              {getVisibilityIcon("showConfirmPassword")}
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.btn} onPress={handleChangePassword}>
+              <Text style={styles.txt}>Update Password</Text>
+            </TouchableOpacity>
+          </View>
         ) : (
           <Text>No customer data found</Text>
         )}
 
-        {/* 
-        <TouchableOpacity onPress={onPress}>
-          <View style={styles.btn}>
-            <Text style={styles.txt}> UPDATE</Text>
-          </View>
-        </TouchableOpacity> */}
+        <View style={{ flexDirection: "row" }}>
+          <TouchableOpacity onPress={() => onPress("Available")}>
+            <View style={styles.btn1}>
+              <Text style={styles.txt}> Available</Text>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => onPress("Unavailable")}>
+            <View style={styles.btn2}>
+              <Text style={styles.txt}>Unavailable</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -271,19 +319,40 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "bold",
     color: "white",
+    justifyContent: "center",
+  },
+  btn1: {
+    alignItems: "center",
+    justifyContent: "center",
+    width: 80,
+    height: 80,
+    backgroundColor: "green",
+    borderRadius: 40,
+    margin: 10,
+    marginLeft: 30,
+  },
+  btn2: {
+    alignItems: "center",
+    justifyContent: "center",
+    width: 80,
+    height: 80,
+    backgroundColor: "red",
+    borderRadius: 40,
+    marginLeft: 160,
+    marginTop: 9,
   },
   title: {
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginTop: 30,
     marginLeft: 20,
   },
   input: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     left: 40,
-    width: '75%',
+    width: "75%",
     height: 50,
-    alignItems:"center",
+    alignItems: "center",
     borderRadius: 5,
     paddingHorizontal: 10,
     borderColor: "gray",
@@ -291,18 +360,18 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   visibilityToggle1: {
-    position:'absolute',
-    right:75,
+    position: "absolute",
+    right: 75,
     marginTop: 310,
   },
   visibilityToggle2: {
-    position:'absolute',
-    right:75,
+    position: "absolute",
+    right: 75,
     marginTop: 380,
   },
   visibilityToggle3: {
-    position:'absolute',
-    right:75,
+    position: "absolute",
+    right: 75,
     marginTop: 460,
-  }
+  },
 });

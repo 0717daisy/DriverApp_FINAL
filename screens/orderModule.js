@@ -22,9 +22,16 @@ import { useNavigation } from "@react-navigation/native";
 import { useRoute } from "@react-navigation/native";
 import { globalStyles } from "../ForStyle/GlobalStyles";
 import { db } from "../firebaseConfig";
-import { ref, onValue, orderByChild, query,  get } from "firebase/database";
+import {
+  ref,
+  onValue,
+  orderByChild,
+  query,
+  get,
+  update,
+} from "firebase/database";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
+import DropDownPicker from "react-native-dropdown-picker";
 
 export default function ProductComponent({}) {
   const styleTypes = ["default", "dark-content", "light-content"];
@@ -39,61 +46,41 @@ export default function ProductComponent({}) {
     navigation.navigate("ProductDetailsAndOrder");
   };
 
-
   const [showModal, setShowModal] = useState(false);
   const onPressHandlerShowModal = () => {
     setShowModal(true);
   };
-  const [showDetails, setShowDetails] = useState(true);
-  const handleCheckIconClick = () => {
-    setShowDetails(false);
-    setOrderInfo([]);
-    console.log("naay sud or wala?", setOrderInfo());
-  };
+
   const [customerData, setCustomerData] = useState();
   const [customerId, setCustomerId] = useState(null);
+  console.log('HSSS', customerId);
   const [orderInfo, setOrderInfo] = useState([]);
+  const [adminID, setAdminID] = useState("");
+  
 
   //get the customer ID from Async in login screen and extract it and Save to customerID
   useEffect(() => {
-    AsyncStorage.getItem("customerData") //e get ang Asycn sa login screen
+    AsyncStorage.getItem("EMPLOYEE_DATA") //e get ang Asycn sa login screen
       .then((data) => {
         if (data !== null) {
+          console.log('2',data);
           //if data is not null
           const parsedData = JSON.parse(data); //then e store ang Data into parsedData
           setCustomerData(parsedData); //passed the parsedData to customerDta
-          const CustomerUID = parsedData.cusId;
+          const CustomerUID = parsedData.emp_id;
+          const adminID = parsedData.adminId;
+          setAdminID(adminID);
           setCustomerId(CustomerUID);
-          getLocationFromCustomerTable(CustomerUID);
         }
       })
       .catch((error) => {
         console.log(error);
-        alert("Error fetching data: ", error);
+        alert("Hi Error fetching data: ", error);
       });
   }, []);
-  const getLocationFromCustomerTable = (cusId) => {
-    const customerRef = ref(db, "CUSTOMER/" + cusId);
-    console.log('Yey',customerRef);
-    onValue(
-      customerRef,
-      (snapshot) => {
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          //console.log('lisud', data);
-          const latitude = get(data, "lattitudeLocation", "");
-          const longitude = get(data, "longitudeLocation", "");
-          setCustomerLatitude(latitude);
-          setCustomerLongitude(longitude);
-        }
-      },
-      (error) => {
-        console.log("Error fetching customer location", error);
-      }
-    );
-  };
 
   useEffect(() => {
+    console.log('driver', adminID);
     const orderRef = ref(db, "ORDERS/");
     const Orderquery = query(orderRef, orderByChild("cusId"));
     onValue(
@@ -101,10 +88,17 @@ export default function ProductComponent({}) {
       (snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.val();
-          const OrderInformation = Object.keys(data).map((key) => ({
-            id: key,
-            ...data[key],
-          })).filter(order => order.order_OrderStatus === "Accepted");
+          const OrderInformation = Object.keys(data)
+            .map((key) => ({
+              id: key,
+              ...data[key],
+            }))
+            .filter((order) => 
+              (order.order_OrderStatus === "Accepted" || order.order_OrderStatus === "Out for Delivery" || order.order_OrderStatus === "Delivered") &&
+              order.order_OrderTypeValue === "delivery" &&
+              order.driverId === customerId &&
+              order.admin_ID === adminID
+            );
           setOrderInfo(OrderInformation);
         } else {
           console.log("No orders found");
@@ -114,15 +108,20 @@ export default function ProductComponent({}) {
         console.log("Error fetching orders", error);
       }
     );
-  }, [customerId]);
+  }, [customerId, adminID]);
   
+  const handleStatusUpdate = (orderId, newStatus) => {
+    const orderRef = ref(db, `ORDERS/${orderId}`);
+    update(orderRef, { order_OrderStatus: newStatus })
+      .then(() => {
+        console.log("Order status updated successfully");
+      })
+      .catch((error) => {
+        console.log("Error updating order status", error);
+      });
+  }; 
 
-  // return () => {
-  //   onValue(Orderquery, null);
-  // };
-  // }, [customerId]);
   return (
-    
     // <ScrollView contentContainerStyle={{flexGrow:1}}
     <View style={styles.container}>
       <FlatList
@@ -136,10 +135,9 @@ export default function ProductComponent({}) {
                   {item.order_StoreName || "No Store name to display"}
                 </Text>
 
-                <Text style={styles.orderText}>
-                Customer Location: {customerLocation.latitude}, {customerLocation.longitude}
-              </Text>
                 <View
+                  //enndddddddd here
+
                   style={{
                     //backgroundColor: "green",
                     flexDirection: "row",
@@ -392,7 +390,6 @@ export default function ProductComponent({}) {
                     {item.order_OrderStatus}
                   </Text>
                 </View>
-
                 <View
                   style={{
                     borderBottomWidth: 0.5,
@@ -400,6 +397,7 @@ export default function ProductComponent({}) {
                     marginTop: 10,
                   }}
                 ></View>
+
                 <View
                   style={{
                     // backgroundColor: "brown",
@@ -427,87 +425,41 @@ export default function ProductComponent({}) {
                     Total Value
                   </Text>
                 </View>
-                <View
-                  style={{
-                    backgroundColor: "transparent",
-                    height: 50,
-                    flexDirection: "row",
-                    justifyContent: "flex-end",
-                  }}
-                >
-                  <TouchableOpacity onPress={onPressHandlerShowModal}>
-                    <View
-                      style={{
-                        // backgroundColor: "red",
-                        marginTop: 15,
-                        height: 25,
-                        borderRadius: 5,
-                        padding: 4,
-                        flexDirection: "row",
-                        width: 30,
-                        height: 30,
-                        justifyContent: "center",
-                        marginLeft: 85,
-                        marginRight: 5,
-                        // elevation: 4,
-                        alignItems: "center",
-                      }}
-                    >
-                      {/* <Text style={{ fontFamily: "nunito-semibold" }}>
-            Feedback
-          </Text> */}
-                      <MaterialIcons name="feedback" size={24} color="black" />
-                    </View>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => {
-                      Alert.alert("Confirmation", "Order received?", [
+                <View style={{ flexDirection: "row" }}>
+                  {/* Start Here */}
+                  <View style={styles.outOrder}>
+                    <TouchableOpacity
+                      style={[
                         {
-                          text: "Not yet",
-                          onPress: () => {
-                            console.log("not yet pressed!");
-                          },
+                          backgroundColor: "dodgerblue",
+                          borderRadius: 10,
+                          alignItems: "center",
+                          width: 120,
                         },
-                        {
-                          text: "Yes",
-                          onPress: () => {
-                            // console.log("Yes pressed!");
-                            handleCheckIconClick();
-                            console.log(
-                              'After Click the "Yes" Button',
-                              orderInfo
-                            );
-                          },
-                        },
-                      ]);
-                    }}
-                  >
-                    <View
-                      style={{
-                        //  backgroundColor: "red",
-                        marginTop: 15,
-                        height: 25,
-                        //borderRadius: 5,
-                        padding: 4,
-                        flexDirection: "row",
-                        width: 30,
-                        justifyContent: "center",
-                        marginRight: 1,
-                        height: 30,
-                      }}
+                      ]}
+                      onPress={() =>
+                        handleStatusUpdate(item.id, "Out for Delivery")
+                      }
                     >
-                      {/* <Text style={{ fontFamily: "nunito-semibold" }}>
-            Received
-          </Text> */}
-                      <MaterialIcons
-                        name="done"
-                        size={24}
-                        color="black"
-                        style={{ marginBottom: -10 }}
-                      />
-                    </View>
-                  </TouchableOpacity>
+                      <Text style={styles.buttonText}>Out for Delivery</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.outOrder1}>
+                    <TouchableOpacity
+                      style={[
+                        {
+                          backgroundColor: "red",
+                          height: 50,
+                          width: 80,
+                          borderRadius: 10,
+                          alignItems: "center",
+                        },
+                      ]}
+                      onPress={() => handleStatusUpdate(item.id, "Delivered")}
+                    >
+                      <Text style={styles.buttonText}>Delivered</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </View>
             </View>
@@ -515,14 +467,8 @@ export default function ProductComponent({}) {
         )}
         ListHeaderComponent={
           <View style={styles.viewBackBtn}>
-            <MaterialIcons
-              name="arrow-back-ios"
-              size={24}
-              color="black"
-              onPress={onPresshandler_toStationPage}
-            />
             <View style={styles.viewwatername}>
-              <Text style={styles.textwatername}>Order Details</Text>
+              <Text style={styles.textwatername}> Order Details</Text>
             </View>
           </View>
         }
@@ -554,7 +500,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   viewwatername: {
-    // backgroundColor: "green",
+    //backgroundColor: "green",
     width: 150,
     marginHorizontal: 100,
   },
@@ -565,7 +511,7 @@ const styles = StyleSheet.create({
   },
   wrapperWaterProduct: {
     // backgroundColor: "red",
-    height: 300,
+    height: 350,
     marginBottom: -15,
   },
 
@@ -591,21 +537,7 @@ const styles = StyleSheet.create({
     fontFamily: "nunito-semibold",
     marginLeft: 0,
   },
-  FeedbackModal: {
-    width: 300,
-    height: 250,
-    backgroundColor: "#F8E2CF",
-    borderBottomColor: "gray",
-    borderBottomWidth: 1,
-    borderRadius: 10,
-    elevation: 10,
-  },
-  modalTitle: {
-    // backgroundColor:'red',
-    justifyContent: "center",
-    padding: 0,
-    flexDirection: "row",
-  },
+
   inputwrapper: {
     // backgroundColor: "green",
     paddingVertical: 5,
@@ -613,16 +545,6 @@ const styles = StyleSheet.create({
     height: 120,
   },
   reviewInputStyle: {
-    flexDirection: "row",
-    borderBottomColor: "black",
-    borderBottomWidth: 1,
-    paddingBottom: 2,
-    marginBottom: 5,
-    width: 270,
-    marginTop: 10,
-    marginLeft: 20,
-  },
-  ratingsInputStyle: {
     flexDirection: "row",
     borderBottomColor: "black",
     borderBottomWidth: 1,
@@ -740,5 +662,31 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "white",
     textAlign: "center",
+    paddingTop: 10,
+    fontWeight: "bold",
+  },
+  buttonContainer1: {
+    flexDirection: "row",
+    borderBottomColor: "black",
+    borderBottomWidth: 1,
+    paddingBottom: 2,
+    marginBottom: 5,
+    width: 120,
+    height: 50,
+    marginTop: 10,
+    marginLeft: 0,
+  },
+  outOrder: {
+    height: 50,
+    flexDirection: "row",
+    borderRadius: 15,
+
+    //textAlign: "center",
+  },
+  outOrder1: {
+    // backgroundColor: "yellow",
+
+    marginLeft: 160,
+    justifyContent: "flex-end",
   },
 });

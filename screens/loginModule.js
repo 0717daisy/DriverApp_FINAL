@@ -11,7 +11,7 @@ import {
   Alert,
   ImageBackground, ToastAndroid
 } from "react-native";
-import React, { useState } from "react";
+import React, { useState, useEffect} from "react";
 import Custombtn from "../shared/customButton";
 import { FontAwesome5 } from "@expo/vector-icons";
 import { Ionicons } from "@expo/vector-icons";
@@ -29,48 +29,34 @@ import {
 } from "firebase/database";
 
 export default function LoginModule({ navigation, route }) {
-  const onPressHandler_toMainPage = () => {
-    navigation.navigate("TabNavigator");
-  };
-  // const [password, setPassword] = useState('');
  
+
   // State variables for emp_id and password
   const [empId, setEmpId] = useState("");
-  console.log("ID number:", empId);
-  const [password, setPassword] = useState("");
+  console.log(empId);
   const [empPassword, setEmpPassword] = useState("");
+  console.log(empPassword);
   const [employeeData, setEmployeeData] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [visible, setVisible] = useState(true);
 
-  // function to Login
-  // const handleLogin = () => {
-  //   console.log("inside the handleLogin", empPassword);
-  //   const starCountRef = ref(db, `EMPLOYEES/${empId}`);
-  //   onValue(starCountRef, (snapshot) => {
-  //     const data = snapshot.val();
-  //     console.log("inside", data);
-  //     if (data && data.emp_pass === empPassword) {
-  //       AsyncStorage.setItem('employeeData', JSON.stringify(data));
-  //       setEmployeeData(data);
-  //       console.log("123123", data);
-  //       alert("Successfully login! \nPlease update your password.");
-  //       AsyncStorage.removeItem('employeeData');
-  //       navigation.navigate("TabNavigator");
-  //       // Render the employee data in your React Native component
-  //     } else {
-  //       alert("Employee not found");
-  //       // Display an error message in your React Native component
-  //     }
-  //   });
-  // };
+  // Clear text inputs when user logs out
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('blur', () => {
+      setEmpId('');
+      setEmpPassword('');
+    });
+    return unsubscribe;
+  }, [navigation]);
+
   const handleLogin = () => {
-    console.log("inside the handleLogin", empPassword);
-    const starCountRef = ref(db, `EMPLOYEES/${empId}`);
+    const starCountRef = ref(db, 'EMPLOYEES/' + empId);
+    console.log('starCountRef:',starCountRef);
     onValue(starCountRef, (snapshot) => {
       const data = snapshot.val();
       console.log("inside", data);
       if (data && data.emp_pass === empPassword) {
+        
         AsyncStorage.setItem('EMPLOYEE_DATA', JSON.stringify(data));
         setEmployeeData(data);
         navigation.navigate("TabNavigator");
@@ -80,26 +66,7 @@ export default function LoginModule({ navigation, route }) {
     });
   };
 
-  const handleChangePassword = () => {
-    if (oldPassword === employeeData.emp_pass) {
-      if (newPassword === confirmPassword) {
-        const employeeRef = ref(db, `EMPLOYEES/${employeeData.emp_id}`);
-        update(employeeRef, { emp_pass: newPassword })
-          .then(() => {
-            Alert.alert("Success", "Password updated successfully");
-          })
-          .catch((error) => {
-            console.log(error);
-            Alert.alert("Error", "Failed to update password. Please try again.");
-          });
-      } else {
-        Alert.alert("Error", "New password and confirm password do not match.");
-      }
-    } else {
-      Alert.alert("Error", "Old password is incorrect. Please try again.");
-    }
-  };
-  
+    
 
   return (
     <SafeAreaView style={globalStyles.safeviewStyle}>
