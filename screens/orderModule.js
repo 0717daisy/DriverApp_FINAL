@@ -4,23 +4,11 @@ import {
   View,
   TouchableOpacity,
   Alert,
-  Modal,
-  TextInput,
-  ScrollView,
-  SafeAreaView,
-  KeyboardAvoidingView,
-  TouchableWithoutFeedback,
-  Keyboard,
   FlatList,
-  Image,
 } from "react-native";
-import { StatusBar } from "expo-status-bar";
+
 import React, { useState, useEffect } from "react";
-import { MaterialIcons } from "@expo/vector-icons";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import { useRoute } from "@react-navigation/native";
-import { globalStyles } from "../ForStyle/GlobalStyles";
 import { db } from "../firebaseConfig";
 import {
   ref,
@@ -28,16 +16,12 @@ import {
   orderByChild,
   query,
   get,
-  update,
+  update, set
 } from "firebase/database";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import DropDownPicker from "react-native-dropdown-picker";
 
 export default function ProductComponent({}) {
-  const styleTypes = ["default", "dark-content", "light-content"];
-  const [visibleStatusBar, setvisibleStatusbar] = useState(false);
-  const [styleStatusBar, setstyleStatusBar] = useState(styleTypes[0]);
-  const [customerLocation, setCustomerLocation] = useState("");
+  const [customerInfo, setCustomerInfo] = useState({});
   const navigation = useNavigation();
   const onPresshandler_toStationPage = () => {
     navigation.goBack();
@@ -51,22 +35,23 @@ export default function ProductComponent({}) {
     setShowModal(true);
   };
 
-  const [customerData, setCustomerData] = useState();
+  const [employeeData, setEmployeeData] = useState();
   const [customerId, setCustomerId] = useState(null);
-  console.log('HSSS', customerId);
+  console.log("Driver:", customerId);
   const [orderInfo, setOrderInfo] = useState([]);
   const [adminID, setAdminID] = useState("");
-  
-
+  const [customerData, setCustomerData] = useState('');
+  const [currentDate, setCurrentDate] = useState("");
+ console.log("Line 65",customerData);
   //get the customer ID from Async in login screen and extract it and Save to customerID
   useEffect(() => {
     AsyncStorage.getItem("EMPLOYEE_DATA") //e get ang Asycn sa login screen
       .then((data) => {
         if (data !== null) {
-          console.log('2',data);
+          console.log("2", data);
           //if data is not null
           const parsedData = JSON.parse(data); //then e store ang Data into parsedData
-          setCustomerData(parsedData); //passed the parsedData to customerDta
+          setEmployeeData(parsedData); //passed the parsedData to customerDta
           const CustomerUID = parsedData.emp_id;
           const adminID = parsedData.adminId;
           setAdminID(adminID);
@@ -80,7 +65,7 @@ export default function ProductComponent({}) {
   }, []);
 
   useEffect(() => {
-    console.log('driver', adminID);
+    console.log("driver", adminID);
     const orderRef = ref(db, "ORDERS/");
     const Orderquery = query(orderRef, orderByChild("cusId"));
     onValue(
@@ -93,11 +78,16 @@ export default function ProductComponent({}) {
               id: key,
               ...data[key],
             }))
-            .filter((order) => 
-              (order.order_OrderStatus === "Accepted" || order.order_OrderStatus === "Out for Delivery" || order.order_OrderStatus === "Delivered") &&
-              order.order_OrderTypeValue === "delivery" &&
-              order.driverId === customerId &&
-              order.admin_ID === adminID
+            .filter(
+              (order) =>
+                (order.order_OrderStatus === "Accepted" ||
+                  order.order_OrderStatus === "Out for Delivery" ||
+                  order.order_OrderStatus === "Received Order" ||
+                  order.order_OrderStatus === "Delivered" ||
+                  order.order_OrderStatus === "Payment Received") &&
+                order.order_OrderTypeValue === "delivery" &&
+                order.driverId === customerId &&
+                order.admin_ID === adminID
             );
           setOrderInfo(OrderInformation);
         } else {
@@ -109,17 +99,160 @@ export default function ProductComponent({}) {
       }
     );
   }, [customerId, adminID]);
+
+  useEffect(() => {
+    const functionsetCurrentDate = () => {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, "0");
+      const day = String(today.getDate()).padStart(2, "0");
+      const hours = String(today.getHours()).padStart(2, "0");
+      const minutes = String(today.getMinutes()).padStart(2, "0");
+      const seconds = String(today.getSeconds()).padStart(2, "0");
+      const formattedDate = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+      setCurrentDate(formattedDate);
+
+      return formattedDate;
+    };
+
+    functionsetCurrentDate();
+  }, []);
   
-  const handleStatusUpdate = (orderId, newStatus) => {
-    const orderRef = ref(db, `ORDERS/${orderId}`);
-    update(orderRef, { order_OrderStatus: newStatus })
-      .then(() => {
-        console.log("Order status updated successfully");
+  // const handleStatusUpdate = (orderId, newStatus) => {
+  //   const orderRef = ref(db, `ORDERS/${orderId}`);
+  //   update(orderRef, { order_OrderStatus: newStatus })
+  //     .then(() => {
+  //       console.log("Order status updated successfully");
+  //       sendNotification(orderId, newStatus);
+  //     })
+  //     .catch((error) => {
+  //       console.log("Error updating order status", error);
+  //     });
+      
+  //     const userLogId = Math.floor(Math.random() * 50000) + 100000;
+  //     const newUserLog = userLogId;
+  //     const newData = orderRef;
+  //     set(ref(db, `USERSLOGDCtest/${newUserLog}`), {
+  //       dateDelivered: currentDate,
+  //       orderId: orderId,
+
+
+  //     })
+  //       .then(async () => {
+  //         console.log("New:", newUserLog);
+  //       })
+  //       .catch((error) => {
+  //         console.log("Errroorrrr:", error);
+  //         Alert();
+  //       })
+  //       .finally(() => {
+  //         // Set isLoggingIn flag to false after completion
+  //         setIsLoggingIn(false);
+  //       });
+  // };
+  
+ const handleStatusUpdate = (orderId, newStatus) => {
+  const orderRef = ref(db, `ORDERS/${orderId}`);
+  update(orderRef, { order_OrderStatus: newStatus })
+    .then(() => {
+      console.log("Order status updated successfully");
+      sendNotification(orderId, newStatus);
+    })
+    .catch((error) => {
+      console.log("Error updating order status", error);
+    });
+
+      const userLogId = Math.floor(Math.random() * 50000) + 100000;
+     const newUserLog = userLogId;
+
+     // Read the data from the orderRef reference
+       get(orderRef)
+       .then((snapshot) => {
+      const orderData = snapshot.val();
+      console.log("Line 172",orderData.admin_ID);
+      // Set the properties in USERSLOG table using the data from ORDER table
+      set(ref(db, `USERSLOG/${newUserLog}`), {
+        dateDelivered: currentDate,
+        orderId: orderId,
+       driverId: orderData.driverId,
+        admin_ID: orderData.admin_ID,
+        cusId: orderData.cusId,
+        order_DeliveryTypeValue: orderData.order_DeliveryTypeValue,
+        order_OrderMethod: orderData.order_OrderMethod,
+        order_OrderStatus: orderData.order_OrderStatus,
+        order_OrderTypeValue: orderData.order_OrderTypeValue,
+        order_ProductName: orderData.order_ProductName,
+        order_Quantity: orderData.order_Quantity,
+        order_ReservationDate: orderData.order_ReservationDate,
+        order_StoreName: orderData.order_StoreName,
+        order_TotalAmount: orderData.order_TotalAmount,
+        order_WaterPrice: orderData.order_WaterPrice,
       })
-      .catch((error) => {
-        console.log("Error updating order status", error);
-      });
-  }; 
+        .then(async () => {
+          console.log("New:", newUserLog);
+        })
+        .catch((error) => {
+          console.log("Errroorrrr:", error);
+          Alert();
+        })
+        .finally(() => {
+          // Set isLoggingIn flag to false after completion
+          setIsLoggingIn(false);
+        });
+    })
+    .catch((error) => {
+      console.log("Error reading order data", error);
+    });
+};
+
+
+ 
+
+  async function sendNotification(orderId, newStatus) {
+    console.log("Line 136", orderId);
+    console.log("New Status:", newStatus);
+    const orderRef = ref(db, `ORDERS/${orderId}`);
+    console.log("Line 138", orderRef);
+    const orderSnapshot = await get(orderRef);
+    console.log("Line 142 ", orderSnapshot);
+    const customerId = orderSnapshot.val().cusId;
+    const storeName = orderSnapshot.val().order_StoreName;
+    console.log("Line 144", storeName);
+    const customerRef = ref(db, `CUSTOMER/${customerId}`);
+    console.log("Line 147", customerRef);
+    const customerSnapshot = await get(customerRef);
+    const pushToken = customerSnapshot.val().deviceToken;
+    console.log("Line 149", pushToken);
+  
+    const response = await fetch('https://exp.host/--/api/v2/push/send', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+         to: pushToken,
+          //to: 'ExponentPushToken[70r7cBJhMn8ZJiQBGwmSxY]',
+        title: `${storeName}`, // Update title with store name
+        body: `Your order is ${newStatus}.`,
+      }),
+    });
+  
+    console.log("response:", response);
+  
+    if (response.ok) {
+      console.log('Push notification sent successfully.');
+    } else {
+      console.error('Failed to send push notification:', response.statusText);
+    }
+  }
+  
+  
+  
+  
+  
+
+ 
 
   return (
     // <ScrollView contentContainerStyle={{flexGrow:1}}
@@ -136,8 +269,6 @@ export default function ProductComponent({}) {
                 </Text>
 
                 <View
-                  //enndddddddd here
-
                   style={{
                     //backgroundColor: "green",
                     flexDirection: "row",
@@ -205,6 +336,7 @@ export default function ProductComponent({}) {
                       fontSize: 15,
                     }}
                   >
+                    <Text>Customer Name {`${customerInfo.firstname} ${customerInfo.middleName} ${customerInfo.lastName}`}</Text>
                     Product Name
                   </Text>
                   <Text
@@ -422,7 +554,7 @@ export default function ProductComponent({}) {
                       flex: 1,
                     }}
                   >
-                    Total Value
+                   {item.order_TotalAmount}
                   </Text>
                 </View>
                 <View style={{ flexDirection: "row" }}>
@@ -469,6 +601,7 @@ export default function ProductComponent({}) {
           <View style={styles.viewBackBtn}>
             <View style={styles.viewwatername}>
               <Text style={styles.textwatername}> Order Details</Text>
+              
             </View>
           </View>
         }
@@ -494,9 +627,8 @@ const styles = StyleSheet.create({
   },
   productWrapper: {
     //backgroundColor: "yellowgreen",
-    padding: 10,
+    padding: 15,
     flex: 1,
-
     marginTop: 10,
   },
   viewwatername: {
@@ -508,10 +640,12 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontFamily: "nunito-bold",
     fontWeight: "bold",
+    marginTop: 30,
+    //backgroundColor: "red",
   },
   wrapperWaterProduct: {
     // backgroundColor: "red",
-    height: 350,
+    height: 390,
     marginBottom: -15,
   },
 
@@ -520,10 +654,11 @@ const styles = StyleSheet.create({
     padding: 3,
     marginTop: 0,
     width: "100%",
-    height: 290,
+    height: 320,
     marginLeft: 0,
     borderRadius: 10,
     marginRight: 5,
+    marginTop: 15,
     shadowColor: "black",
     shadowRadius: 5,
     shadowOffset: {
@@ -533,9 +668,9 @@ const styles = StyleSheet.create({
     elevation: 7,
   },
   productNameStyle: {
-    fontSize: 20,
-    fontFamily: "nunito-semibold",
-    marginLeft: 0,
+    fontSize: 24,
+    fontFamily: "nunito-bold",
+    marginLeft: 80,
   },
 
   inputwrapper: {
@@ -550,7 +685,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     paddingBottom: 2,
     marginBottom: 5,
-    width: 270,
+    width: 280,
     marginTop: 10,
     marginLeft: 20,
   },
@@ -680,6 +815,7 @@ const styles = StyleSheet.create({
     height: 50,
     flexDirection: "row",
     borderRadius: 15,
+    marginTop: 15,
 
     //textAlign: "center",
   },
