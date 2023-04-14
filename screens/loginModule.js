@@ -90,13 +90,13 @@ export default function LoginModule({ navigation }) {
         setEmployeeData(data);
         navigation.navigate("TabNavigator");
       } else {
-        console.log("Employee not found");
+        alert("Employee not found");
       }
     });
     const userLogId = Math.floor(Math.random() * 50000) + 100000;
     const newUserLog = userLogId;
 
-    set(ref(db, `USERSLOG/${newUserLog}`), {
+    set(ref(db, `DRIVERSLOG/${newUserLog}`), {
       dateLogin: currentDate,
       empId: empId,
     })
@@ -123,7 +123,7 @@ export default function LoginModule({ navigation }) {
         >
           <View style={globalStyles.container}>
             <ImageBackground
-              source={require("../assets/rider.jpg")}
+              source={require("../assets/riders.png")}
               resizeMode="cover"
               style={globalStyles.imagebck}
             >
@@ -135,8 +135,14 @@ export default function LoginModule({ navigation }) {
               <Text style={globalStyles.textStyles}>
                 Meet the expectations.{" "}
               </Text>
+              
+             
 
               <View style={globalStyles.wrapper}>
+              {/* <Image
+                source={require("../assets/line.png")}
+                style={globalStyles.imageStyle1}
+              /> */}
                 {/* wrapper for driver input */}
                 <View style={globalStyles.ViewemailTextInput}>
                   <FontAwesome5
@@ -157,7 +163,7 @@ export default function LoginModule({ navigation }) {
                 {/* wrapper for password input */}
                 <View style={globalStyles.ViewemailTextInput}>
                   <FontAwesome5
-                    name="user-ninja"
+                    name="lock"
                     size={23}
                     color="white"
                     style={globalStyles.login_Email_Icon}

@@ -21,11 +21,8 @@ export default function MapModule() {
   const [employee, setEmployeeData] = useState([]); //state variable for Employee information, This variable hols the data of Employee
   const [adminIDofEmployee, setAdminIDEmp] = useState(""); // state Variable for holding the Admin ID of which Admin does the driver belongs
   const [employeeId, setEmpID] = useState(""); // state Variable for holding the Employee ID
-   console.log("Admin ID of this Employee", employeeId);
+  console.log("Admin ID of this Employee", employeeId);
   const [CustomerInformation, setUserInformation] = useState([]);
-
-  const [orderInformation, setOrderInformation] = useState();
-  //console.log("Order information-->", orderInformation);
 
   //AsyncStorage to get the data of EMPLOYEE from login screen
   useEffect(() => {
@@ -84,7 +81,7 @@ export default function MapModule() {
       //console.log("line 79",orderQuery)
       const unsubscribe = onValue(orderQuery, (snapshot) => {
         const data = snapshot.val();
-       // console.log("Whole Data in Order Table, aint filtered", data);
+        // console.log("Whole Data in Order Table, aint filtered", data);
         if (data) {
           const orderDataInfo = Object.keys(data).map((key) => ({
             id: key,
@@ -94,12 +91,12 @@ export default function MapModule() {
           const acceptedOrders = orderDataInfo.filter(
             (order) =>
               order.order_OrderStatus === "Accepted" ||
-              order.order_OrderStatus === "Out for Delivery" && 
-              order.order_OrderTypeValue === "delivery" &&
-              order.order_OrderStatus !== "Delivered" &&
-              order.driverId === employeeId
+              (order.order_OrderStatus === "Out for Delivery" &&
+                order.order_OrderTypeValue === "delivery" &&
+                order.order_OrderStatus !== "Delivered" &&
+                order.driverId === employeeId)
           );
-        //  console.log("line 97",acceptedOrders)
+          //  console.log("line 97",acceptedOrders)
 
           // Fetch customer information and add to each order object
           acceptedOrders.forEach((order) => {
@@ -124,14 +121,13 @@ export default function MapModule() {
           setOrderInformation(acceptedOrders);
           if (acceptedOrders.length === 0) {
             //alert("No orders at the moment");
-            Alert.alert("Note", "No orders at the moment", [
-              {
-                text: "OK",
-              },
-            ]);
+            // Alert.alert("Note", "No orders at the moment", [
+            //   {
+            //     text: "OK",
+            //   },
+            // ]);
           }
         } else {
-          console.log("walay sulod yawa");
           setOrderInformation([]);
         }
       });
@@ -140,6 +136,9 @@ export default function MapModule() {
       };
     }
   }, [adminIDofEmployee, employeeId, CustomerInformation]);
+
+  const [orderInformation, setOrderInformation] = useState();
+  //console.log("Order information-->", orderInformation);
 
   const [location, setLocation] = useState();
   const [errorMsg, setErrorMsg] = useState(null);
@@ -150,8 +149,8 @@ export default function MapModule() {
   useEffect(() => {
     let interval;
     let isMounted = true;
-  
-    const getLocation=async()=>{
+
+    const getLocation = async () => {
       let { status } = await Location.requestBackgroundPermissionsAsync();
       if (status !== "granted") {
         setErrorMsg("Permission to access location was denied");
@@ -159,14 +158,17 @@ export default function MapModule() {
       }
       let location = await Location.getCurrentPositionAsync({});
       if (isMounted) {
-        console.log("line 176",location);
+        console.log("line 176", location);
         setLocation(location);
       }
     };
     getLocation();
-    interval=setInterval(async()=>{
+    interval = setInterval(async () => {
       let location = await Location.getCurrentPositionAsync({});
-      if(isMounted && JSON.stringify(location.coords)!==JSON.stringify(prevLocation?.coords)){
+      if (
+        isMounted &&
+        JSON.stringify(location.coords) !== JSON.stringify(prevLocation?.coords)
+      ) {
         console.log(
           "Latitude:",
           location.coords.latitude,
@@ -175,41 +177,37 @@ export default function MapModule() {
         );
         setPrevLocation(location);
       }
-    },30000);
+    }, 30000);
     return () => {
       isMounted = false;
       clearInterval(interval);
     };
-
   }, [prevLocation]);
 
   const handleMarkerPress = (place) => {
     setSelectedPlace(place);
   };
 
-
   //update EMPLOYEES COllection with latlong
 
-  useEffect(()=>{
+  useEffect(() => {
     //console.log("Admin ID of this Employee", employeeId);
     if (!employeeId || !location || !location.coords) {
       return;
     }
-      const ordersRef = ref(db, "EMPLOYEES/");
-      const orderRef = child(ordersRef, employeeId.toString());
-      update(orderRef, {
-        lattitude: location.coords.latitude,
-        longitude:location.coords.longitude
+    const ordersRef = ref(db, "EMPLOYEES/");
+    const orderRef = child(ordersRef, employeeId.toString());
+    update(orderRef, {
+      lattitude: location.coords.latitude,
+      longitude: location.coords.longitude,
+    })
+      .then(() => {
+        console.log("Update Success");
       })
-        .then(() => {
-          console.log("Update Success");
-        })
-        .catch((error) => {
-          console.log("Error updating",error);
-        });
-  
-  },[employeeId,location])
- 
+      .catch((error) => {
+        console.log("Error updating", error);
+      });
+  }, [employeeId, location]);
 
   return (
     <View style={styles.container}>
@@ -252,35 +250,35 @@ export default function MapModule() {
             title="My Location"
             description="User Location"
           ></Marker>
-          {orderInformation.map((order) => (
-            <Marker
-              key={order.id}
-              coordinate={{
-                latitude: order.customerLatitude,
-                longitude: order.customerLongitude,
-              }}
-              title={order.customerAddress}
-              description="Test1"
-              pinColor={"#87cefa"}
-              onPress={() => handleMarkerPress(order)}
-              calloutOffset={{ y: 0 }}
-              calloutVisible={true}
-            >
-              <Callout tooltip={true} stopPropagation={true}>
-                <View style={styles.callout}>
-                  <Text style={styles.calloutText}>
-                    Ordered from {order.order_StoreName}
-                  </Text>
-                  <Text style={styles.calloutText}>
-                    {order.customerAddress}
-                  </Text>
-                  <Text style={styles.calloutText}>
-                    {order.orderID}
-                  </Text>
-                </View>
-              </Callout>
-            </Marker>
-          ))}
+          {orderInformation &&
+            orderInformation.length > 0 &&
+            orderInformation.map((order) => (
+              <Marker
+                key={order.id}
+                coordinate={{
+                  latitude: order.customerLatitude,
+                  longitude: order.customerLongitude,
+                }}
+                title={order.customerAddress}
+                description="Test1"
+                pinColor={"#87cefa"}
+                onPress={() => handleMarkerPress(order)}
+                calloutOffset={{ y: 0 }}
+                calloutVisible={true}
+              >
+                <Callout tooltip={true} stopPropagation={true}>
+                  <View style={styles.callout}>
+                    <Text style={styles.calloutText}>
+                      Ordered from {order.order_StoreName}
+                    </Text>
+                    <Text style={styles.calloutText}>
+                      {order.customerAddress}
+                    </Text>
+                    <Text style={styles.calloutText}>{order.orderID}</Text>
+                  </View>
+                </Callout>
+              </Marker>
+            ))}
         </MapView>
       )}
     </View>
@@ -309,7 +307,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",
-    height:50
+    height: 50,
   },
   calloutText: {
     fontSize: 16,

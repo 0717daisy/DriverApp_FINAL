@@ -2,36 +2,44 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
 
 
-export const globalStyles = StyleSheet.create({
+export const globalStyles = StyleSheet.create({ 
     container: {
       flex: 1,
-      backgroundColor: 'lightseagreen',
+      backgroundColor: '#7C96AB',
     },
     imageStyle:{
       height:60,
       width:60,
-      marginTop:230,
-      marginLeft: 170,
+      marginTop:125,
+      marginLeft: 300,
       
       },
+      imageStyle1:{
+        height:100,
+        width:160,
+        //marginTop:310,
+        marginLeft: 290,
+        
+        },
       imagebck:{
         flex: 1,
         width: "100%",
-        height: "50%",
+        height: "40%",
     justifyContent: 'center',
+    marginTop:50,
         },
       textStyles:{
         fontSize:5,
         fontFamily:'nunito-medium',
-        marginLeft: 170,
-       
-      },
+        marginLeft: 305,
+        color: "white",
+      }, 
       txtStyles:{
         fontSize:30,
         fontFamily:'nunito-medium',
       },
       wrapper:{
-      //  backgroundColor:'green',
+        //backgroundColor:'skyblue',
         padding:30,
         height:200,
         width: '100%',
@@ -97,7 +105,7 @@ export const globalStyles = StyleSheet.create({
         width:250,
         left:30,
     
-    },
+    }, 
     buttonText:{
       fontFamily:'nunito-bold',
       fontWeight:'bold',

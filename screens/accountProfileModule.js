@@ -151,7 +151,7 @@ export default function AccountProfileModule({ navigation }) {
       const newUserLogId = Math.floor(Math.random() * 50000) + 100000;
       const newUserLog = newUserLogId;
 
-      set(ref(db, `USERSLOG/${newUserLog}`), {
+      set(ref(db, `DRIVERSLOG/${newUserLog}`), {
         dateLogout: formattedDate, // Set the logout date and time
         empId: empId, // Set the current logged-in employee ID
       })
