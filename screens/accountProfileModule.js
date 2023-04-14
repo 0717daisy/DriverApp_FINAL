@@ -25,7 +25,7 @@ import {
 } from "@expo/vector-icons";
 import CustomInput from "../shared/customInput";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ref, update } from "firebase/database";
+import { ref, update, set } from "firebase/database";
 import { db } from "../firebaseConfig";
 
 export default function AccountProfileModule({ navigation }) {
@@ -69,7 +69,6 @@ export default function AccountProfileModule({ navigation }) {
       });
   }, []);
   const handleChangePassword = () => {
-    console.log("employeeData:", employeeData.emp_pass);
     if (passwords.oldPassword === employeeData.emp_pass) {
       if (passwords.newPassword === passwords.confirmPassword) {
         const employeeRef = ref(db, `EMPLOYEES/${employeeData.emp_id}`);
@@ -128,26 +127,56 @@ export default function AccountProfileModule({ navigation }) {
     }
   };
 
+
   const handleLogout = async () => {
     try {
+      // Get the currently logged-in employee ID
+      const currentUser = await AsyncStorage.getItem("EMPLOYEE_DATA");
+      const empId = JSON.parse(currentUser).emp_id; // assuming emp_id is the property name for employee ID
+  
       await AsyncStorage.multiRemove(["customerData", "email", "password"]);
       // navigate to login screen or any other screen
+  
+      // Get the current date and time
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, "0");
+      const day = String(today.getDate()).padStart(2, "0");
+      const hours = String(today.getHours()).padStart(2, "0");
+      const minutes = String(today.getMinutes()).padStart(2, "0");
+      const seconds = String(today.getSeconds()).padStart(2, "0");
+      const formattedDate = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  
+      // Save the user log data
+      const newUserLogId = Math.floor(Math.random() * 50000) + 100000;
+      const newUserLog = newUserLogId;
 
-      Alert.alert("", "Do you want to logout?", [
-        {
-          text: "Yes",
-          onPress: () => {
-            navigation.navigate("Login", { email: "", password: "" });
-          },
-        },
-        {
-          text: "cancel",
-        },
-      ]);
+      set(ref(db, `DRIVERSLOG/${newUserLog}`), {
+        dateLogout: formattedDate, // Set the logout date and time
+        empId: empId, // Set the current logged-in employee ID
+      })
+        .then(async () => {
+          console.log("New:", newUserLog);
+          Alert.alert("", "Do you want to logout?", [
+            {
+              text: "Yes",
+              onPress: () => {
+                navigation.navigate("Login", { email: "", password: "" });
+              },
+            },
+            {
+              text: "cancel",
+            },
+          ]);
+        })
+        .catch((error) => {
+          console.log("Errroorrrr:", error);
+        });
     } catch (error) {
       console.log(error);
     }
   };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>

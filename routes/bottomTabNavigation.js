@@ -86,6 +86,7 @@ function MyTabsNavigator() {
       independent={true}
       tabBarVisible={true}
       screenOptions={({ route }) => ({
+        tabBarHideOnKeyboard: true,
         tabBarIcon: ({ focused, size, color }) => {
           let iconName;
           if (route.name === "Order") {
