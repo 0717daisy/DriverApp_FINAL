@@ -69,26 +69,33 @@ export default function AccountProfileModule({ navigation }) {
       });
   }, []);
   const handleChangePassword = () => {
+    // Define a regex pattern for a strong password
+    const strongPasswordPattern = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+  
     if (passwords.oldPassword === employeeData.emp_pass) {
       if (passwords.newPassword === passwords.confirmPassword) {
-        const employeeRef = ref(db, `EMPLOYEES/${employeeData.emp_id}`);
-        update(employeeRef, { emp_pass: passwords.newPassword })
-          .then(() => {
-            Alert.alert("Success", "Password updated successfully");
-            setPasswords({
-              ...passwords,
-              oldPassword: "",
-              newPassword: "",
-              confirmPassword: "",
+        if (strongPasswordPattern.test(passwords.newPassword)) { // Check if the new password matches the strong password pattern
+          const employeeRef = ref(db, `EMPLOYEES/${employeeData.emp_id}`);
+          update(employeeRef, { emp_pass: passwords.newPassword })
+            .then(() => {
+              Alert.alert("Success", "Password updated successfully");
+              setPasswords({
+                ...passwords,
+                oldPassword: "",
+                newPassword: "",
+                confirmPassword: "",
+              });
+            })
+            .catch((error) => {
+              console.log(error);
+              Alert.alert(
+                "Error",
+                "Failed to update password. Please try again."
+              );
             });
-          })
-          .catch((error) => {
-            console.log(error);
-            Alert.alert(
-              "Error",
-              "Failed to update password. Please try again."
-            );
-          });
+        } else {
+          Alert.alert("Error", "New password must contain at least 8 characters, including at least one uppercase letter, one lowercase letter, one digit, and one special character (!@#$%^&*()_+-=[]{};':\"\\|,.<>/?).");
+        }
       } else {
         Alert.alert("Error", "New password and confirm password do not match.");
       }
@@ -102,6 +109,8 @@ export default function AccountProfileModule({ navigation }) {
       [key]: !passwords[key],
     });
   };
+
+  
 
   const getVisibilityIcon = (key) => {
     if (passwords[key]) {
