@@ -84,13 +84,13 @@ export default function LoginModule({ navigation }) {
     console.log("starCountRef:", starCountRef);
     onValue(starCountRef, (snapshot) => {
       const data = snapshot.val();
-      console.log("inside", data);
+      //console.log("inside", data);
       if (data && data.emp_pass === empPassword) {
         AsyncStorage.setItem("EMPLOYEE_DATA", JSON.stringify(data));
         setEmployeeData(data);
         navigation.navigate("TabNavigator");
       } else {
-        alert("Employee not found");
+        //alert("Employee not found");
       }
     });
     const userLogId = Math.floor(Math.random() * 50000) + 100000;

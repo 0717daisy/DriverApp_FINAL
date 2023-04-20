@@ -5,21 +5,15 @@ import {
   TouchableOpacity,
   Alert,
   FlatList,
+  ToastAndroid,
 } from "react-native";
 
 import React, { useState, useEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { db } from "../firebaseConfig";
 
-import {
-  ref,
-  onValue,
-  orderByChild,
-  query,
-  get,
-  update,
-  set,
-} from "firebase/database";
+import { getDatabase, ref, set, push, onValue, query, orderByChild, equalTo, update, get} from "firebase/database";
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function AllStatusScreen() {
@@ -44,7 +38,7 @@ export default function AllStatusScreen() {
   const [adminID, setAdminID] = useState("");
   const [customerData, setCustomerData] = useState("");
   const [currentDate, setCurrentDate] = useState("");
-  console.log("Line 65", customerData);
+
   //get the customer ID from Async in login screen and extract it and Save to customerID
   useEffect(() => {
     AsyncStorage.getItem("EMPLOYEE_DATA") //e get ang Asycn sa login screen
@@ -105,7 +99,7 @@ export default function AllStatusScreen() {
                   order.order_OrderStatus === "Received Order" ||
                   order.order_OrderStatus === "Delivered" ||
                   order.order_OrderStatus === "Payment Received") &&
-                order.order_OrderTypeValue === "delivery" &&
+                order.order_OrderTypeValue === "Delivery" &&
                 order.driverId === customerId &&
                 order.admin_ID === adminID
             );
@@ -123,7 +117,7 @@ export default function AllStatusScreen() {
             }
           });
           setOrderInfo(OrderInformation);
-          console.log("line 96", OrderInformation);
+          //console.log("line 96", OrderInformation);
         } else {
           console.log("No orders found");
         }
@@ -162,15 +156,15 @@ export default function AllStatusScreen() {
       .catch((error) => {
         console.log("Error updating order status", error);
       });
-  
+
     const userLogId = Math.floor(Math.random() * 50000) + 100000;
     const newUserLog = userLogId;
-  
+
     // Read the data from the orderRef reference
     get(orderRef)
       .then((snapshot) => {
         const orderData = snapshot.val();
-        console.log("Line 172", orderData.admin_ID);
+        //console.log("Line 172", orderData.admin_ID);
         // Set the properties in USERSLOG table using the data from ORDER table
         set(ref(db, `DRIVERSLOG/${newUserLog}`), {
           dateDelivered: currentDate,
@@ -187,7 +181,7 @@ export default function AllStatusScreen() {
           order_StoreName: orderData.order_StoreName,
           order_TotalAmount: orderData.order_TotalAmount,
           order_WaterPrice: orderData.order_WaterPrice,
-          actions: newStatus // Add the "actions" property with the new status
+          actions: newStatus, // Add the "actions" property with the new status
         })
           .then(async () => {
             console.log("New:", newUserLog);
@@ -205,7 +199,6 @@ export default function AllStatusScreen() {
         console.log("Error reading order data", error);
       });
   };
-  
 
   async function sendNotification(orderId, newStatus) {
     console.log("Line 136", orderId);
@@ -223,28 +216,35 @@ export default function AllStatusScreen() {
     const pushToken = customerSnapshot.val().deviceToken;
     console.log("Line 149", pushToken);
 
+    const notificationRef = ref(db, `NOTIFICATION/${orderId}`);
+    const notificationData = {
+        bodyCustomer: `Your order is ${newStatus}.`, // Update notification message
+        dateOrderDelivered: new Date().toISOString(),
+    };
+    await update(notificationRef, notificationData);
+
     const response = await fetch("https://exp.host/--/api/v2/push/send", {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        to: pushToken,
-        //to: 'ExponentPushToken[70r7cBJhMn8ZJiQBGwmSxY]',
-        title: `${storeName}`, // Update title with store name
-        body: `Your order is ${newStatus}.`,
-      }),
+        method: "POST",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            to: pushToken,
+            title: `${storeName}`, // Update title with store name
+            body: `Your order is ${newStatus}.`,
+        }),
     });
 
-    console.log("response:", response);
-
     if (response.ok) {
-      console.log("Push notification sent successfully.");
+        console.log("Push notification sent successfully.");
     } else {
-      console.error("Failed to send push notification:", response.statusText);
+        console.error("Failed to send push notification:", response.statusText);
     }
-  }
+}
+
+  
+  
 
   return (
     // <ScrollView contentContainerStyle={{flexGrow:1}}
