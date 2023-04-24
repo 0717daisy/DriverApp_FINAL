@@ -26,6 +26,7 @@ import {
 import CustomInput from "../shared/customInput";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ref, update, set } from "firebase/database";
+import firebase from "firebase/compat";
 import { db } from "../firebaseConfig";
 
 export default function AccountProfileModule({ navigation }) {

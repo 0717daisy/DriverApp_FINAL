@@ -12,7 +12,7 @@ import {
   ImageBackground,
   ToastAndroid,
 } from "react-native";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useLayoutEffect } from "react";
 import Custombtn from "../shared/customButton";
 import { FontAwesome5 } from "@expo/vector-icons";
 import { Ionicons } from "@expo/vector-icons";
@@ -53,7 +53,7 @@ export default function LoginModule({ navigation }) {
     return unsubscribe;
   }, [navigation]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const functionsetCurrentDate = () => {
       const today = new Date();
       const year = today.getFullYear();

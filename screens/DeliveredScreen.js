@@ -101,7 +101,7 @@ export default function DeliveredScreen() {
             .filter(
               (order) =>
                 (order.order_OrderStatus === "Delivered") &&
-                order.order_OrderTypeValue === "delivery" &&
+                order.order_OrderTypeValue === "Delivery" &&
                 order.driverId === customerId &&
                 order.admin_ID === adminID
             );

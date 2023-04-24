@@ -44,8 +44,6 @@ export default function AllStatusScreen() {
     AsyncStorage.getItem("EMPLOYEE_DATA") //e get ang Asycn sa login screen
       .then((data) => {
         if (data !== null) {
-          console.log("2", data);
-          //if data is not null
           const parsedData = JSON.parse(data); //then e store ang Data into parsedData
           setEmployeeData(parsedData); //passed the parsedData to customerDta
           const CustomerUID = parsedData.emp_id;
@@ -215,13 +213,31 @@ export default function AllStatusScreen() {
     const customerSnapshot = await get(customerRef);
     const pushToken = customerSnapshot.val().deviceToken;
     console.log("Line 149", pushToken);
+    
+     // Generate new integer key for notification
+     const notificationRef = ref(db, "NOTIFICATIONTEST");
+     const notificationSnapshot = await get(notificationRef);
+     const notificationKeys = Object.keys(notificationSnapshot.val());
+     const maxKey = Math.max(...notificationKeys);
+     const newKey = maxKey + 1;
+ 
+     // Create new notification object with generated key
+     const newNotification = {
+         admin_ID: orderSnapshot.val().admin_ID,
+         bodyAdmin: `The order of customer ${customerId} is ${newStatus}.`,
+         body: `Your order is ${newStatus}.`,
+         cusId: customerId,
+         notificationDate: currentDate,
+         notificationID: newKey,
+         orderID: orderId,
+         dateDelivered: currentDate,
+         receiver1: "Customer",
+         receiver2: "Admin",
+         sender: "Driver",
+     };
 
-    const notificationRef = ref(db, `NOTIFICATION/${orderId}`);
-    const notificationData = {
-        bodyCustomer: `Your order is ${newStatus}.`, // Update notification message
-        dateOrderDelivered: new Date().toISOString(),
-    };
-    await update(notificationRef, notificationData);
+      // Save new notification object to database
+    await set(ref(db, `NOTIFICATIONTEST/${newKey}`), newNotification);
 
     const response = await fetch("https://exp.host/--/api/v2/push/send", {
         method: "POST",

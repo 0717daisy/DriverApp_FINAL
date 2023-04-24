@@ -101,7 +101,7 @@ export default function OutforDelivery() {
             .filter(
               (order) =>
                 (order.order_OrderStatus === "Out for Delivery") &&
-                order.order_OrderTypeValue === "delivery" &&
+                order.order_OrderTypeValue === "Delivery" &&
                 order.driverId === customerId &&
                 order.admin_ID === adminID
             );
