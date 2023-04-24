@@ -213,11 +213,11 @@ export default function MapModule() {
     <View style={styles.container}>
       {location && (
         <MapView
-          // onMapReady={() => {
-          //   orderInformation.forEach((customer) => {
-          //     handleMarkerPress(customer);
-          //   });
-          // }}
+          onMapReady={() => {
+            orderInformation.forEach((customer) => {
+              handleMarkerPress(customer);
+            });
+          }}
           provider={PROVIDER_GOOGLE}
           mapType="hybrid"
           style={styles.map}

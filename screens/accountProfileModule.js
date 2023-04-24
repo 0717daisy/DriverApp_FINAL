@@ -21,12 +21,13 @@ import {
   Ionicons,
   MaterialIcons,
   MaterialCommunityIcons,
-  FontAwesome,
+  FontAwesome, AntDesign
 } from "@expo/vector-icons";
 import CustomInput from "../shared/customInput";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ref, update, set } from "firebase/database";
-import firebase from "firebase/compat";
+import { firebase } from "../firebaseStorage";
+import * as ImagePicker from "expo-image-picker";
 import { db } from "../firebaseConfig";
 
 export default function AccountProfileModule({ navigation }) {
@@ -71,11 +72,13 @@ export default function AccountProfileModule({ navigation }) {
   }, []);
   const handleChangePassword = () => {
     // Define a regex pattern for a strong password
-    const strongPasswordPattern = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
-  
+    const strongPasswordPattern =
+      /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+
     if (passwords.oldPassword === employeeData.emp_pass) {
       if (passwords.newPassword === passwords.confirmPassword) {
-        if (strongPasswordPattern.test(passwords.newPassword)) { // Check if the new password matches the strong password pattern
+        if (strongPasswordPattern.test(passwords.newPassword)) {
+          // Check if the new password matches the strong password pattern
           const employeeRef = ref(db, `EMPLOYEES/${employeeData.emp_id}`);
           update(employeeRef, { emp_pass: passwords.newPassword })
             .then(() => {
@@ -95,7 +98,10 @@ export default function AccountProfileModule({ navigation }) {
               );
             });
         } else {
-          Alert.alert("Error", "New password must contain at least 8 characters, including at least one uppercase letter, one lowercase letter, one digit, and one special character (!@#$%^&*()_+-=[]{};':\"\\|,.<>/?).");
+          Alert.alert(
+            "Error",
+            "New password must contain at least 8 characters, including at least one uppercase letter, one lowercase letter, one digit, and one special character (!@#$%^&*()_+-=[]{};':\"\\|,.<>/?)."
+          );
         }
       } else {
         Alert.alert("Error", "New password and confirm password do not match.");
@@ -110,8 +116,6 @@ export default function AccountProfileModule({ navigation }) {
       [key]: !passwords[key],
     });
   };
-
-  
 
   const getVisibilityIcon = (key) => {
     if (passwords[key]) {
@@ -137,16 +141,15 @@ export default function AccountProfileModule({ navigation }) {
     }
   };
 
-
   const handleLogout = async () => {
     try {
       // Get the currently logged-in employee ID
       const currentUser = await AsyncStorage.getItem("EMPLOYEE_DATA");
       const empId = JSON.parse(currentUser).emp_id; // assuming emp_id is the property name for employee ID
-  
+
       await AsyncStorage.multiRemove(["customerData", "email", "password"]);
       // navigate to login screen or any other screen
-  
+
       // Get the current date and time
       const today = new Date();
       const year = today.getFullYear();
@@ -156,7 +159,7 @@ export default function AccountProfileModule({ navigation }) {
       const minutes = String(today.getMinutes()).padStart(2, "0");
       const seconds = String(today.getSeconds()).padStart(2, "0");
       const formattedDate = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-  
+
       // Save the user log data
       const newUserLogId = Math.floor(Math.random() * 50000) + 100000;
       const newUserLog = newUserLogId;
@@ -187,17 +190,95 @@ export default function AccountProfileModule({ navigation }) {
     }
   };
 
+  const [image, setImage] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [imageURL, setImageURL] = useState(null);
+
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
+
+    if (!result.cancelled) {
+      setImage(result.uri);
+    }
+  };
+
+  const uploadImage = async () => {
+    if (image == null) {
+      Alert.alert("Please select an image to upload");
+      return;
+    }
+  
+    const response = await fetch(image);
+    const blob = await response.blob();
+  
+    const timestamp = new Date().getTime();
+    const ProfilePicture = `profile-picture-${timestamp}`;
+  
+    const ref = firebase.storage().ref().child(ProfilePicture);
+    const snapshot = ref.put(blob);
+  
+    setUploading(true);
+  
+    snapshot.on(
+      firebase.storage.TaskEvent.STATE_CHANGED,
+      () => {},
+      (error) => {
+        console.log(error);
+        setUploading(false);
+        Alert.alert("An error occurred while uploading the image");
+      },
+      async () => {
+        const downloadURL = await snapshot.snapshot.ref.getDownloadURL();
+        console.log("File available at", downloadURL);
+        setUploading(false);
+        setImageURL(downloadURL); // Store the download URL in state
+        Alert.alert("Image uploaded successfully!");
+        setImage(null);
+      }
+    );
+  };
+
+  useEffect(() => {
+    // Call uploadImage function when the component is mounted
+    uploadImage();
+  }, []);
+  
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={{ alignSelf: "center", marginTop: 40 }}>
-          <View style={styles.profileImage}>
-            <FontAwesome
-              name="user-circle"
-              size={100}
-              // color="#DFD8C8"
-            ></FontAwesome>
-          </View>
+      <View style={styles.profile}>
+          {imageURL ? (
+            <>
+              <Image source={{ uri: imageURL }} style={styles.profileImage} />
+              <TouchableOpacity onPress={pickImage}>
+                <AntDesign
+                  name="edit"
+                  size={18}
+                  color="#DFD8C8"
+                  style={styles.editIcon}
+                />
+              </TouchableOpacity>
+            </>
+          ) : (
+            <AntDesign
+              name="pluscircle"
+              size={40}
+              color="#DFD8C8"
+              onPress={pickImage}
+            />
+          )}
+          <TouchableOpacity onPress={uploadImage}>
+            <AntDesign name="cloudupload" size={18} color="#DFD8C8" />
+          </TouchableOpacity>
+          {uploading && <Text>Uploading image...</Text>}
+        </View>
+          
           <View style={styles.out}>
             <TouchableOpacity onPress={handleLogout}>
               <MaterialIcons
@@ -208,9 +289,9 @@ export default function AccountProfileModule({ navigation }) {
               <View></View>
             </TouchableOpacity>
           </View>
-        </View>
+       
         <View style={styles.text}>
-          <Text style={{ fontWeight: "bold", left: 20, marginTop: 25 }}>
+          <Text style={{ fontWeight: "bold", left: 20, marginTop: 20 }}>
             Basic Information
           </Text>
         </View>
@@ -321,23 +402,31 @@ const styles = StyleSheet.create({
     height: undefined,
     width: undefined,
   },
-
-  profileImage: {
-    width: 100,
-    height: 100,
-    marginTop: 10,
-    borderRadius: 200,
-    //overflow: "hidden",
-    // backgroundColor:'skyblue'
+  imagePlaceholder: {
+    width: 200,
+    height: 200,
+    backgroundColor: "#DFD8C8",
+    alignItems: "center",
+    justifyContent: "center",
   },
-
+  profile: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 40,
+  },
+  profileImage: {
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    marginBottom: 10,
+  },
   out: {
     backgroundColor: "#41444B",
     position: "absolute",
     top: 40,
     width: 40,
     height: 40,
-    marginLeft: 150,
+    marginLeft: 300,
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",

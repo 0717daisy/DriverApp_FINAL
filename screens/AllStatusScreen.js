@@ -146,7 +146,7 @@ export default function AllStatusScreen() {
 
   const handleStatusUpdate = (orderId, newStatus) => {
     const orderRef = ref(db, `ORDERS/${orderId}`);
-    update(orderRef, { order_OrderStatus: newStatus })
+    update(orderRef, { order_OrderStatus: newStatus,  dateOrderDelivered: currentDate })
       .then(() => {
         console.log("Order status updated successfully");
         sendNotification(orderId, newStatus);
@@ -214,8 +214,8 @@ export default function AllStatusScreen() {
     const pushToken = customerSnapshot.val().deviceToken;
     console.log("Line 149", pushToken);
     
-     // Generate new integer key for notification
-     const notificationRef = ref(db, "NOTIFICATIONTEST");
+     // Generate new integer key for Customer's notification
+     const notificationRef = ref(db, "NOTIFICATION");
      const notificationSnapshot = await get(notificationRef);
      const notificationKeys = Object.keys(notificationSnapshot.val());
      const maxKey = Math.max(...notificationKeys);
@@ -231,14 +231,38 @@ export default function AllStatusScreen() {
          notificationID: newKey,
          orderID: orderId,
          dateDelivered: currentDate,
-         receiver1: "Customer",
-         receiver2: "Admin",
+         receiver: "Customer",
          sender: "Driver",
+         status: "unread",
      };
 
-      // Save new notification object to database
-    await set(ref(db, `NOTIFICATIONTEST/${newKey}`), newNotification);
+      // Save new notification object to database for customer
+    await set(ref(db, `NOTIFICATION/${newKey}`), newNotification);
 
+    // Generate new integer key for Admin's notification
+    const notificationsRef = ref(db, "NOTIFICATION");
+    const notificationsSnapshot = await get(notificationsRef);
+    const notificationsKeys = Object.keys(notificationsSnapshot.val());
+    const maxKeys = Math.max(...notificationsKeys);
+    const newKeys = maxKeys + 2;
+
+    // Create new notification object with generated key
+    const newNotifications = {
+        admin_ID: orderSnapshot.val().admin_ID,
+        bodyAdmin: `The order of customer ${customerId} is ${newStatus}.`,
+        cusId: customerId,
+        notificationDate: currentDate,
+        notificationID: newKeys,
+        orderID: orderId,
+        dateDelivered: currentDate,
+        receiver: "Admin",
+        sender: "Driver",
+        status: "unread",
+    };
+
+     // Save new notification object to database
+   await set(ref(db, `NOTIFICATION/${newKeys}`), newNotifications);
+   
     const response = await fetch("https://exp.host/--/api/v2/push/send", {
         method: "POST",
         headers: {

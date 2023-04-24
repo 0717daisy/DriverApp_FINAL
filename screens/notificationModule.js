@@ -1,56 +1,82 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
-import { db} from "../firebaseConfig";
-import { ref, query, orderByChild, equalTo, onValue } from "firebase/database";
+import { db } from "../firebaseConfig";
+import { ref, query, orderByChild, equalTo, onValue, update } from "firebase/database";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
+import {Fontisto} from "@expo/vector-icons";
 
 export default function NotificationScreen() {
   const [notifications, setNotifications] = useState([]);
+  const [readNotifications, setReadNotifications] = useState([]);
+  const navigation = useNavigation();
 
   useEffect(() => {
     async function fetchNotifications() {
       const employeeData = JSON.parse(await AsyncStorage.getItem('EMPLOYEE_DATA'));
-      console.log("DRIVER:", employeeData);
       if (employeeData) {
         const driverId = employeeData.emp_id;
-        console.log("CURRENT DRIVER:", driverId);
-        const notificationsRef = ref(db, "NOTIFICATIONTEST");
-        console.log("Notif Table:", notificationsRef);
-        const notificationsQuery = query(notificationsRef, orderByChild('driverId'), equalTo(driverId));
-        onValue(notificationsQuery, (snapshot) => {
-          const notificationsData = snapshot.val();
-          const newNotifications = [];
-          for (const key in notificationsData) {
-            if (notificationsData.hasOwnProperty(key)) {
-              const notification = notificationsData[key];
-              const { orderID, dateOrderAccepted, body } = notification;
-              newNotifications.push({ orderID, dateOrderAccepted,body });
+        const notificationsRef = ref(db, "NOTIFICATION/");
+        const notificationsQuery = query(notificationsRef, orderByChild("driverId"), equalTo(driverId));
+        onValue(
+          notificationsQuery,
+          (snapshot) => {
+            if (snapshot.exists()) {
+              const data = snapshot.val();
+              const NotifInformation = Object.keys(data)
+                .map((key) => ({
+                  id: key,
+                  ...data[key],
+                }))
+                .filter((notification) => notification.receiver === "Driver" );
+              setNotifications(NotifInformation);
+              setReadNotifications(NotifInformation.filter((notification) => notification.status === "read"));
             }
+          },
+          (error) => {
+            console.error(error);
           }
-          setNotifications(newNotifications);
-        });
+        );
       }
     }
     fetchNotifications();
   }, []);
 
+
+const handleNotificationPress = async (notification) => {
+  if (notification.status === "unread") {
+    const notificationRef = ref(db, `NOTIFICATION/${notification.id}`);
+    await update(notificationRef, { status: "read" });
+    setReadNotifications([...readNotifications, notification]);
+  }
+  navigation.navigate('AllStatusScreen');
+}
+
+
   const handleDeleteNotification = (orderID) => {
     setNotifications(notifications.filter(notification => notification.orderID !== orderID));
   }
-
+  
   return (
     <View style={styles.container}>
       <Text style={styles.text1}>Notifications</Text>
       {notifications.map((notification) => (
-        <View key={notification.orderID} style={styles.notification}>
-          {/* <Text style={styles.text}> {notification.dateOrderAccepted}</Text> */}
-          <Text style={styles.text}>Order: {notification.orderID}</Text>
+        <View key={notification.orderID} style={[styles.notification, readNotifications.includes(notification) && styles.readNotification]}>
+          <TouchableOpacity onPress={() => handleNotificationPress(notification)}>
+            <Text style={[styles.text, notification.status === "unread" && styles.unreadText]}> {notification.notificationDate}</Text>
+          </TouchableOpacity>
           <Text style={styles.text}> {notification.body}</Text>
-          {/* <TouchableOpacity style={styles.deleteButton} onPress={() => handleDeleteNotification(notification.orderID)}>
-            <Text style={styles.deleteButtonText}>Delete</Text>
-          </TouchableOpacity> */}
+          <TouchableOpacity style={styles.deleteButton} onPress={() => handleDeleteNotification(notification.orderID)}>
+          <Fontisto
+                name="trash"
+                size={13}
+                color="#DFD8C8"
+              ></Fontisto>
+              <View></View>
+          </TouchableOpacity>
+          
         </View>
-      ))} 
+      ))}
     </View>
   );
 }
@@ -60,18 +86,22 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "lightcyan",
     alignItems: 'center',
-   
   },
   notification: {
     marginVertical: 30,
     padding: 20,
-    backgroundColor: "white",
+    backgroundColor: "#F8E2CF",
     borderRadius: 5,
     elevation: 3,
   },
+  readNotification: {
+    backgroundColor: "white",
+  },
+  unreadText: {
+    fontWeight: 'bold',
+  },
   text: {
     fontSize: 15,
-    fontWeight: 'bold',
     marginBottom: 5,
   },
   text1: {
@@ -83,10 +113,13 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     backgroundColor: 'red',
-    marginTop: 10,
+    marginTop: 5,
+    marginRight:15,
     padding: 10,
     borderRadius: 5,
     alignSelf: 'flex-end',
+    justifyContent: 'space-between',
+    position: 'absolute',
   },
   deleteButtonText: {
     color: '#fff',
