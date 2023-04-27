@@ -10,10 +10,9 @@ import { FontAwesome } from "@expo/vector-icons";
 
 import { StyleSheet } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import React, {useState} from "react";
+import React, {useState, useEffect} from "react";
 import LoginModule from "../screens/loginModule";
-import { useFocusEffect } from "@react-navigation/native";
-import { setBadgeCountAsync, getBadgeCountAsync } from "expo-notifications";
+
 //import { Badge } from "react-native-elements";
 //import { Button } from '@rneui/base';
 
@@ -70,15 +69,10 @@ function MyTabsNavigator() {
     );
   }
   
-  const [badgeCount, setBadgeCount] = useState(0);
-   // Update the badge count when the notifications screen is in focus
-   useFocusEffect(() => {
-    const updateBadgeCount = async () => {
-      const count = await getBadgeCountAsync();
-      setBadgeCount(count);
-    };
-    updateBadgeCount();
-  });
+  
+  const [unreadCount, setUnreadCount] = useState(0);
+  console.log("unreadCount:", unreadCount);
+  
 
   return (
     <Tab.Navigator
@@ -152,7 +146,7 @@ function MyTabsNavigator() {
         name="Notification"
         component={notificationModule}
         options={{
-          tabBarBadge: badgeCount > 0 ? badgeCount : null,
+          tabBarBadge: unreadCount
         }}
       />
       <Tab.Screen

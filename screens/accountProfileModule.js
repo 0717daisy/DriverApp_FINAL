@@ -237,7 +237,7 @@ export default function AccountProfileModule({ navigation }) {
         console.log("File available at", downloadURL);
         setUploading(false);
         setImageURL(downloadURL); // Store the download URL in state
-        Alert.alert("Image uploaded successfully!");
+        //Alert.alert("Image uploaded successfully!");
         setImage(null);
       }
     );

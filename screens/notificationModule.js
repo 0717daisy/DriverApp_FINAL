@@ -26,9 +26,59 @@ export default function NotificationScreen() {
   const [notifications, setNotifications] = useState([]);
   const [readNotifications, setReadNotifications] = useState([]);
   const [currentTime, setCurrentTime] = useState(new Date());
+ 
+  
 
   const navigation = useNavigation();
 
+  // useEffect(() => {
+  //   async function fetchNotifications() {
+  //     const employeeData = JSON.parse(
+  //       await AsyncStorage.getItem("EMPLOYEE_DATA")
+  //     );
+  //     if (employeeData) {
+  //       const driverId = employeeData.emp_id;
+  //       const notificationsRef = ref(db, "NOTIFICATION/");
+  //       const notificationsQuery = query(
+  //         notificationsRef,
+  //         orderByChild("driverId"),
+  //         equalTo(driverId)
+  //       );
+  //       onValue(
+  //         notificationsQuery,
+  //         (snapshot) => {
+  //           if (snapshot.exists()) {
+  //             const data = snapshot.val();
+  //             const NotifInformation = Object.keys(data)
+  //               .map((key) => ({
+  //                 id: key,
+  //                 ...data[key],
+  //               }))
+  //               .filter((notification) => notification.receiver === "Driver");
+  //             setNotifications(NotifInformation);
+  //             setReadNotifications(
+  //               NotifInformation.filter(
+  //                 (notification) => notification.status === "read"
+  //               )
+  //             );
+  //           }
+  //         },
+  //         (error) => {
+  //           console.error(error);
+  //         }
+  //       );
+  //     }
+  //   }
+  //   fetchNotifications();
+  //   // Update the current time every minute
+  //   const intervalId = setInterval(() => {
+  //     setCurrentTime(new Date());
+  //   }, 60000);
+
+  //   return () => clearInterval(intervalId);
+  // }, []);
+  const [unreadCount, setUnreadCount] = useState(0);
+  console.log("111unreadCount:", unreadCount);
   useEffect(() => {
     async function fetchNotifications() {
       const employeeData = JSON.parse(
@@ -59,6 +109,10 @@ export default function NotificationScreen() {
                   (notification) => notification.status === "read"
                 )
               );
+              const unreadNotifications = NotifInformation.filter(
+                (notification) => notification.status === "unread"
+              );
+              setUnreadCount(unreadNotifications.length);
             }
           },
           (error) => {
@@ -68,6 +122,7 @@ export default function NotificationScreen() {
       }
     }
     fetchNotifications();
+  
     // Update the current time every minute
     const intervalId = setInterval(() => {
       setCurrentTime(new Date());
@@ -81,14 +136,20 @@ export default function NotificationScreen() {
       const notificationRef = ref(db, `NOTIFICATION/${notification.id}`);
       await update(notificationRef, { status: "read" });
       setReadNotifications([...readNotifications, notification]);
+      
     }
-    navigation.navigate("AllStatusScreen");
-  };
+    console.log("NOTIFI:", notification);
+    console.log("NOTIFI:", typeof notification);
+    const orderID=notification.orderID;
+    console.log("OrderID:", orderID);
 
-  const handleDeleteNotification = (orderID) => {
-    setNotifications(
-      notifications.filter((notification) => notification.orderID !== orderID)
-    );
+    if (notification.orderID) {
+      const orderID = notification.orderID;
+      console.log("OrderID:", orderID);
+      navigation.navigate("All" ,{orderID});
+    } else {
+      console.log("Notification does not have an orderID property.");
+    }
   };
 
   const getTimeDifference = (notificationTime) => {
@@ -105,12 +166,16 @@ export default function NotificationScreen() {
       return "just now";
     }
   };
+  const handleDeleteNotification = (notificationID) => {
+    setNotifications(
+      notifications.filter((notification) => notification.notificationID !== notificationID)
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
         <Text style={styles.text1}>Notifications</Text>
-
         {notifications
           .sort((a, b) => {
             console.log("a:", a.notificationDate, "b:", b.notificationDate);
@@ -118,7 +183,7 @@ export default function NotificationScreen() {
           }) // sort notifications in descending order
           .map((notification) => (
             <View
-              key={notification.orderID}
+              key={notification.notificationID}
               style={[
                 styles.notification,
                 readNotifications.includes(notification) &&
@@ -140,7 +205,7 @@ export default function NotificationScreen() {
                   )}
                 </Text>
               </TouchableOpacity>
-              <View style={{flexDirection:'row',}}>
+              <View style={{flexDirection:'row',  }}>
               <View style={styles.imageContainer}>
                 <Image
                   source={require("../assets/storeNoBG.png")}
@@ -155,19 +220,22 @@ export default function NotificationScreen() {
              
              <TouchableOpacity
                 style={styles.deleteButton}
-                onPress={() => handleDeleteNotification(notification.orderID)}
+                onPress={() => handleDeleteNotification(notification.notificationID)}
               >
                 <Fontisto name="trash" size={13} color="#DFD8C8" ></Fontisto>
                 
               </TouchableOpacity>
 
-            
-             
               {/* <View>
        <Text style={styles.notificationTimeDifference}>{getTimeDifference(notification.notificationDate)}</Text>
       </View> */}
             </View>
           ))}
+          {/* {unreadCount > 0 && (
+  <View style={styles.badge}>
+    <Text style={styles.badgeText}>{unreadCount}</Text>
+  </View>
+)} */}
       </ScrollView>
     </SafeAreaView>
   );
@@ -178,13 +246,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "lightcyan",
     alignItems: "center",
+    
   },
   notification: {
-    marginVertical: 20,
+    marginVertical: 10,
     padding: 20,
     backgroundColor: "#F8E2CF",
+    //backgroundColor: "red",
     borderRadius: 10,
     elevation: 5,
+    height:120,
     //  flexDirection: "row",
     // alignItems: "center",
   },
@@ -196,9 +267,9 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 15,
-    marginBottom: 5,
+    //marginBottom: 15,
     fontWeight: "bold",
-    marginLeft: 70,
+    marginLeft: 90,
   },
   text1: {
     fontSize: 20,
@@ -212,9 +283,9 @@ const styles = StyleSheet.create({
    
   },
   deleteButton: {
-    backgroundColor: "red",
+    backgroundColor: "black",
     marginTop: 5,
-    // marginRight:10,
+    //marginRight:-10,
     padding: 5,
     borderRadius: 5,
     alignSelf: "flex-end",
@@ -229,10 +300,24 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 10,
+    marginTop:-20,
   },
   image: {
     width: 50,
     height: 50,
     borderRadius: 20,
   },
+  badge: {
+    backgroundColor: "red",
+    borderRadius: 10,
+    padding: 5,
+    position: "absolute",
+    top: 745,
+    right: 130,
+  },
+  badgeText: {
+    color: "white",
+    fontWeight: "bold",
+  },
 });
+
