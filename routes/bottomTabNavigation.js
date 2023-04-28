@@ -4,14 +4,15 @@ import MapModule from "../screens/mapModule";
 import NotificationModule from "../screens/notificationModule";
 import ProfileModule from "../screens/accountProfileModule";
 import customInput from "../shared/customInput";
-
+import { NotificationContext } from '../shared/NotificationContext'
 import notificationModule from "../screens/notificationModule";
 import { FontAwesome } from "@expo/vector-icons";
 
 import { StyleSheet } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import React, {useState, useEffect} from "react";
+import React, {useState, useEffect, useContext} from "react";
 import LoginModule from "../screens/loginModule";
+
 
 //import { Badge } from "react-native-elements";
 //import { Button } from '@rneui/base';
@@ -70,7 +71,8 @@ function MyTabsNavigator() {
   }
   
   
-  const [unreadCount, setUnreadCount] = useState(0);
+  // const [unreadCount, setUnreadCount] = useState(0);
+  const { unreadCount, updateUnreadCount } = useContext(NotificationContext);
   console.log("unreadCount:", unreadCount);
   
 
@@ -146,8 +148,8 @@ function MyTabsNavigator() {
         name="Notification"
         component={notificationModule}
         options={{
-          //tabBarBadge: unreadCount
-          tabBarBadge: 1
+          tabBarBadge: unreadCount
+          //tabBarBadge: 1
         }}
       />
       <Tab.Screen

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import {
   StyleSheet,
   Text,
@@ -21,64 +21,20 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import { Fontisto } from "@expo/vector-icons";
 import moment from "moment";
+import { NotificationContext } from '../shared/NotificationContext'
 
 export default function NotificationScreen() {
   const [notifications, setNotifications] = useState([]);
   const [readNotifications, setReadNotifications] = useState([]);
   const [currentTime, setCurrentTime] = useState(new Date());
- 
-  
+
+  //const { unreadCount, setUnreadCount } = useContext(NotificationContext);
+  const { unreadCount, updateUnreadCount } = useContext(NotificationContext);
 
   const navigation = useNavigation();
+  //const { unreadCount } = useContext(NotificationContext);
 
-  // useEffect(() => {
-  //   async function fetchNotifications() {
-  //     const employeeData = JSON.parse(
-  //       await AsyncStorage.getItem("EMPLOYEE_DATA")
-  //     );
-  //     if (employeeData) {
-  //       const driverId = employeeData.emp_id;
-  //       const notificationsRef = ref(db, "NOTIFICATION/");
-  //       const notificationsQuery = query(
-  //         notificationsRef,
-  //         orderByChild("driverId"),
-  //         equalTo(driverId)
-  //       );
-  //       onValue(
-  //         notificationsQuery,
-  //         (snapshot) => {
-  //           if (snapshot.exists()) {
-  //             const data = snapshot.val();
-  //             const NotifInformation = Object.keys(data)
-  //               .map((key) => ({
-  //                 id: key,
-  //                 ...data[key],
-  //               }))
-  //               .filter((notification) => notification.receiver === "Driver");
-  //             setNotifications(NotifInformation);
-  //             setReadNotifications(
-  //               NotifInformation.filter(
-  //                 (notification) => notification.status === "read"
-  //               )
-  //             );
-  //           }
-  //         },
-  //         (error) => {
-  //           console.error(error);
-  //         }
-  //       );
-  //     }
-  //   }
-  //   fetchNotifications();
-  //   // Update the current time every minute
-  //   const intervalId = setInterval(() => {
-  //     setCurrentTime(new Date());
-  //   }, 60000);
-
-  //   return () => clearInterval(intervalId);
-  // }, []);
-  const [unreadCount, setUnreadCount] = useState([]);
-  console.log("111unreadCount:", unreadCount);
+  console.log("unreadCount:", unreadCount);
   useEffect(() => {
     async function fetchNotifications() {
       const employeeData = JSON.parse(
@@ -112,7 +68,7 @@ export default function NotificationScreen() {
               const unreadNotifications = NotifInformation.filter(
                 (notification) => notification.status === "unread"
               );
-              setUnreadCount(unreadNotifications.length);
+              updateUnreadCount(unreadNotifications.length);
             }
           },
           (error) => {
@@ -127,10 +83,10 @@ export default function NotificationScreen() {
     const intervalId = setInterval(() => {
       setCurrentTime(new Date());
     }, 60000);
-
+  
     return () => clearInterval(intervalId);
   }, []);
-
+  
   const handleNotificationPress = async (notification) => {
     if (notification.status === "unread") {
       const notificationRef = ref(db, `NOTIFICATION/${notification.id}`);
@@ -170,6 +126,11 @@ export default function NotificationScreen() {
     setNotifications(
       notifications.filter((notification) => notification.notificationID !== notificationID)
     );
+  
+    const deletedNotification = readNotifications.find((notification) => notification.notificationID === notificationID);
+    if (deletedNotification) {
+      setReadNotifications(readNotifications.filter((notification) => notification.notificationID !== notificationID));
+    }
   };
 
   return (
@@ -181,7 +142,7 @@ export default function NotificationScreen() {
             .sort((a, b) => new Date(b.notificationDate) - new Date(a.notificationDate))
             .map((notification) => (
               <View
-                key={notification.notificationID}
+                key={notification.notificationID} 
                 style={[
                   styles.notification,
                   readNotifications.includes(notification) && styles.readNotification,
