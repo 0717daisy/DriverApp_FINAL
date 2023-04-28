@@ -209,7 +209,7 @@ export default function AccountProfileModule({ navigation }) {
 
   const uploadImage = async () => {
     if (image == null) {
-      Alert.alert("Please select an image to upload");
+      //Alert.alert("Please select an image to upload");
       return;
     }
   
@@ -219,7 +219,10 @@ export default function AccountProfileModule({ navigation }) {
     const timestamp = new Date().getTime();
     const ProfilePicture = `profile-picture-${timestamp}`;
   
-    const ref = firebase.storage().ref().child(ProfilePicture);
+    // Set the path to the image, including the folder
+    const path = `DriverImages/${ProfilePicture}`;
+  
+    const ref = firebase.storage().ref().child(path);
     const snapshot = ref.put(blob);
   
     setUploading(true);
@@ -236,12 +239,24 @@ export default function AccountProfileModule({ navigation }) {
         const downloadURL = await snapshot.snapshot.ref.getDownloadURL();
         console.log("File available at", downloadURL);
         setUploading(false);
+        // Store the download URL in AsyncStorage
+      await AsyncStorage.setItem('imageURL', downloadURL);
         setImageURL(downloadURL); // Store the download URL in state
         //Alert.alert("Image uploaded successfully!");
         setImage(null);
       }
     );
   };
+  // Call this function to retrieve the latest image URL from AsyncStorage
+const getImageURL = async () => {
+  const url = await AsyncStorage.getItem('imageURL');
+  setImageURL(url);
+};
+
+useEffect(() => {
+  // Call getImageURL function when the component is mounted
+  getImageURL();
+}, []);
 
   useEffect(() => {
     // Call uploadImage function when the component is mounted

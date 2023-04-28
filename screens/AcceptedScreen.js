@@ -115,7 +115,7 @@ export default function AcceptedScreen() {
               order.customerLongitude = customer.longitudeLocation;
               order.customerAddress = customer.address;
               order.customerPhone = customer.phoneNumber;
-              order.fullName = customer.firstname + " " + customer.lastName;
+              order.fullName = customer.firstName + " " + customer.lastName;
             }
           });
           setOrderInfo(OrderInformation);

@@ -100,7 +100,13 @@ export default function AllStatusScreen() {
                 order.order_OrderTypeValue === "Delivery" &&
                 order.driverId === customerId &&
                 order.admin_ID === adminID
-            );
+            )
+            .sort((a, b) => {
+              const dateA = new Date(a.dateOrderAccepted).getTime();
+              const dateB = new Date(b.dateOrderAccepted).getTime();
+              console.log("date",dateA );
+              return dateA - dateB;
+          });
           // console.log("line 113",CustomerInformation);
           OrderInformation.forEach((order) => {
             const customer = CustomerInformation.find(
@@ -111,7 +117,7 @@ export default function AllStatusScreen() {
               order.customerLongitude = customer.longitudeLocation;
               order.customerAddress = customer.address;
               order.customerPhone = customer.phoneNumber;
-              order.fullName = customer.firstname + " " + customer.lastName;
+              order.fullName = customer.firstName + " " + customer.lastName;
             }
           });
           setOrderInfo(OrderInformation);

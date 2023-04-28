@@ -77,7 +77,7 @@ export default function NotificationScreen() {
 
   //   return () => clearInterval(intervalId);
   // }, []);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadCount, setUnreadCount] = useState([]);
   console.log("111unreadCount:", unreadCount);
   useEffect(() => {
     async function fetchNotifications() {
@@ -152,20 +152,20 @@ export default function NotificationScreen() {
     }
   };
 
-  const getTimeDifference = (notificationTime) => {
-    const timeDifference = moment.duration(
-      currentTime.diff(moment(notificationTime))
-    );
-    const days = timeDifference.days();
-    const hours = timeDifference.hours();
-    if (days > 0) {
-      return `${days} day${days > 1 ? "s" : ""} ago`;
-    } else if (hours > 0) {
-      return `${hours} hour${hours > 1 ? "s" : ""} ago`;
-    } else {
-      return "just now";
-    }
-  };
+  // const getTimeDifference = (notificationTime) => {
+  //   const timeDifference = moment.duration(
+  //     currentTime.diff(moment(notificationTime))
+  //   );
+  //   const days = timeDifference.days();
+  //   const hours = timeDifference.hours();
+  //   if (days > 0) {
+  //     return `${days} day${days > 1 ? "s" : ""} ago`;
+  //   } else if (hours > 0) {
+  //     return `${hours} hour${hours > 1 ? "s" : ""} ago`;
+  //   } else {
+  //     return "just now";
+  //   }
+  // };
   const handleDeleteNotification = (notificationID) => {
     setNotifications(
       notifications.filter((notification) => notification.notificationID !== notificationID)
@@ -174,72 +174,58 @@ export default function NotificationScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView>
-        <Text style={styles.text1}>Notifications</Text>
-        {notifications
-          .sort((a, b) => {
-            console.log("a:", a.notificationDate, "b:", b.notificationDate);
-            return new Date(b.notificationDate) - new Date(a.notificationDate);
-          }) // sort notifications in descending order
-          .map((notification) => (
-            <View
-              key={notification.notificationID}
-              style={[
-                styles.notification,
-                readNotifications.includes(notification) &&
-                  styles.readNotification,
-              ]}
-            >
-              <TouchableOpacity
-                onPress={() => handleNotificationPress(notification)}
+      {notifications.length > 0 ? (
+        <ScrollView>
+          <Text style={styles.text1}>Notifications</Text>
+          {notifications
+            .sort((a, b) => new Date(b.notificationDate) - new Date(a.notificationDate))
+            .map((notification) => (
+              <View
+                key={notification.notificationID}
+                style={[
+                  styles.notification,
+                  readNotifications.includes(notification) && styles.readNotification,
+                ]}
               >
-                <Text
-                  style={[
-                    styles.text,
-                    notification.status === "unread" && styles.unreadText,
-                  ]}
+                <TouchableOpacity onPress={() => handleNotificationPress(notification)}>
+                  <Text
+                    style={[
+                      styles.text,
+                      notification.status === "unread" && styles.unreadText,
+                    ]}
+                  >
+                    {moment(notification.notificationDate).format("MMMM Do YYYY, h:mm:ss a")}
+                  </Text>
+                </TouchableOpacity>
+                <View style={{ flexDirection: 'row' }}>
+                  <View style={styles.imageContainer}>
+                    <Image
+                      source={require("../assets/storeNoBG.png")}
+                      style={styles.image}
+                    />
+                  </View>
+                  <View style={{ top: 5, right: 10, width: 260, alignItems: "center" }}>
+                    <Text style={styles.text2}> {notification.body}</Text>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() => handleDeleteNotification(notification.notificationID)}
                 >
-                  {" "}
-                  {moment(notification.notificationDate).format(
-                    "MMMM Do YYYY, h:mm:ss a"
-                  )}
-                </Text>
-              </TouchableOpacity>
-              <View style={{flexDirection:'row',  }}>
-              <View style={styles.imageContainer}>
-                <Image
-                  source={require("../assets/storeNoBG.png")}
-                  style={styles.image}
-                />
+                  <Fontisto name="trash" size={13} color="#DFD8C8"></Fontisto>
+                </TouchableOpacity>
               </View>
-              <View style={{top:5,right:10,width:260,  alignItems: "center",}}>
-                <Text style={styles.text2}> {notification.body}</Text>
-
-              </View>
-              </View>
-             
-             <TouchableOpacity
-                style={styles.deleteButton}
-                onPress={() => handleDeleteNotification(notification.notificationID)}
-              >
-                <Fontisto name="trash" size={13} color="#DFD8C8" ></Fontisto>
-                
-              </TouchableOpacity>
-
-              {/* <View>
-       <Text style={styles.notificationTimeDifference}>{getTimeDifference(notification.notificationDate)}</Text>
-      </View> */}
-            </View>
-          ))}
-          {/* {unreadCount > 0 && (
-  <View style={styles.badge}>
-    <Text style={styles.badgeText}>{unreadCount}</Text>
-  </View>
-)} */}
-      </ScrollView>
+            ))}
+        </ScrollView>
+      ) : (
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <Text style={styles.noNotificationText}></Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -320,4 +306,3 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 });
-

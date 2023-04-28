@@ -146,7 +146,8 @@ function MyTabsNavigator() {
         name="Notification"
         component={notificationModule}
         options={{
-          tabBarBadge: unreadCount
+          //tabBarBadge: unreadCount
+          tabBarBadge: 1
         }}
       />
       <Tab.Screen
