@@ -139,44 +139,46 @@ export default function NotificationScreen() {
         <ScrollView>
           <Text style={styles.text1}>Notifications</Text>
           {notifications
-            .sort((a, b) => new Date(b.notificationDate) - new Date(a.notificationDate))
-            .map((notification) => (
-              <View
-                key={notification.notificationID} 
-                style={[
-                  styles.notification,
-                  readNotifications.includes(notification) && styles.readNotification,
-                ]}
-              >
-                <TouchableOpacity onPress={() => handleNotificationPress(notification)}>
-                  <Text
-                    style={[
-                      styles.text,
-                      notification.status === "unread" && styles.unreadText,
-                    ]}
-                  >
-                    {moment(notification.notificationDate).format("MMMM Do YYYY, h:mm:ss a")}
-                  </Text>
-                </TouchableOpacity>
-                <View style={{ flexDirection: 'row' }}>
-                  <View style={styles.imageContainer}>
-                    <Image
-                      source={require("../assets/storeNoBG.png")}
-                      style={styles.image}
-                    />
-                  </View>
-                  <View style={{ top: 5, right: 10, width: 260, alignItems: "center" }}>
-                    <Text style={styles.text2}> {notification.body}</Text>
-                  </View>
-                </View>
-                <TouchableOpacity
-                  style={styles.deleteButton}
-                  onPress={() => handleDeleteNotification(notification.notificationID)}
-                >
-                  <Fontisto name="trash" size={13} color="#DFD8C8"></Fontisto>
-                </TouchableOpacity>
-              </View>
-            ))}
+  .sort((a, b) => new Date(b.notificationDate) - new Date(a.notificationDate))
+  .map((notification) => (
+    <View
+      key={notification.notificationID} 
+      style={[
+        styles.notification,
+        readNotifications.includes(notification) && styles.readNotification,
+      ]}
+    >
+      <TouchableOpacity onPress={notification.status === "read" ? () => {} : () => handleNotificationPress(notification)}>
+        <Text
+          style={[
+            styles.text,
+            notification.status === "unread" && styles.unreadText,
+            notification.status === "read" && styles.readText, // add a conditional style for read notifications
+          ]}
+        >
+          {moment(notification.notificationDate).format("MMMM Do YYYY, h:mm:ss a")}
+        </Text>
+      </TouchableOpacity>
+      <View style={{ flexDirection: 'row' }}>
+        <View style={styles.imageContainer}>
+          <Image
+            source={require("../assets/storeNoBG.png")}
+            style={styles.image}
+          />
+        </View>
+        <View style={{ top: 5, right: 10, width: 260, alignItems: "center" }}>
+          <Text style={styles.text2}> {notification.body}</Text>
+        </View>
+      </View>
+      <TouchableOpacity
+        style={styles.deleteButton}
+        onPress={() => handleDeleteNotification(notification.notificationID)}
+      >
+        <Fontisto name="trash" size={13} color="#DFD8C8"></Fontisto>
+      </TouchableOpacity>
+    </View>
+  ))}
+
         </ScrollView>
       ) : (
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>

@@ -25,10 +25,10 @@ import {
 } from "@expo/vector-icons";
 import CustomInput from "../shared/customInput";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ref, update, set } from "firebase/database";
+import { ref, update, set,onValue} from "firebase/database";
 import { firebase } from "../firebaseStorage";
 import * as ImagePicker from "expo-image-picker";
-import { db } from "../firebaseConfig";
+import { db, auth } from "../firebaseConfig";
 
 export default function AccountProfileModule({ navigation }) {
   const [text, onChangeText] = React.useState("");
@@ -45,6 +45,9 @@ export default function AccountProfileModule({ navigation }) {
     showNewPassword: false,
     showConfirmPassword: false,
   });
+  const getRef = (db, path) => {
+    return ref(db, path);
+  };
 
   const onPressHandler_toMainPage = () => {
     navigation.navigate("TabNavigator");
@@ -147,7 +150,7 @@ export default function AccountProfileModule({ navigation }) {
       const currentUser = await AsyncStorage.getItem("EMPLOYEE_DATA");
       const empId = JSON.parse(currentUser).emp_id; // assuming emp_id is the property name for employee ID
 
-      await AsyncStorage.multiRemove(["customerData", "email", "password"]);
+      await AsyncStorage.multiRemove(["customerData", "email", "password",]);
       // navigate to login screen or any other screen
 
       // Get the current date and time
@@ -192,7 +195,7 @@ export default function AccountProfileModule({ navigation }) {
 
   const [image, setImage] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [imageURL, setImageURL] = useState(null);
+  const [imageURL, setImageURL] = useState("");
 
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -209,10 +212,9 @@ export default function AccountProfileModule({ navigation }) {
 
   const uploadImage = async () => {
     if (image == null) {
-      //Alert.alert("Please select an image to upload");
+      Alert.alert("Please select an image to upload");
       return;
     }
-  
     const response = await fetch(image);
     const blob = await response.blob();
   
@@ -240,28 +242,49 @@ export default function AccountProfileModule({ navigation }) {
         console.log("File available at", downloadURL);
         setUploading(false);
         // Store the download URL in AsyncStorage
-      await AsyncStorage.setItem('imageURL', downloadURL);
+        await AsyncStorage.setItem("imageURL", downloadURL);
         setImageURL(downloadURL); // Store the download URL in state
-        //Alert.alert("Image uploaded successfully!");
         setImage(null);
+  
+        // update employee data in Realtime Database with profile image URL
+        const { emp_id } = employeeData;
+        const employeeRef = getRef(db, `EMPLOYEES/${emp_id}`);
+        await update(employeeRef, {
+          profile_image_url: downloadURL,
+        });
       }
     );
   };
-  // Call this function to retrieve the latest image URL from AsyncStorage
+  
+  // Retrieve the image URL from your Realtime Database
 const getImageURL = async () => {
-  const url = await AsyncStorage.getItem('imageURL');
-  setImageURL(url);
+  const employeeData = await AsyncStorage.getItem("EMPLOYEE_DATA");
+  const empId = JSON.parse(employeeData).emp_id;
+
+  const employeeRef = ref(db, `EMPLOYEES/${empId}`);
+  onValue(employeeRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data.profile_image_url) {
+      setImageURL(data.profile_image_url);
+    }
+  });
 };
 
+// Call getImageURL function when the component is mounted
 useEffect(() => {
-  // Call getImageURL function when the component is mounted
   getImageURL();
 }, []);
+// Call getImageURL function when the user logs in or the app is resumed from the background
+useEffect(() => {
+  const unsubscribe = auth.onAuthStateChanged((user) => {
+    if (user) {
+      getImageURL();
+    }
+  });
 
-  useEffect(() => {
-    // Call uploadImage function when the component is mounted
-    uploadImage();
-  }, []);
+  return unsubscribe;
+}, []);
+
   
 
   return (
