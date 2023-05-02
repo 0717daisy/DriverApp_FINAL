@@ -21,7 +21,7 @@ export default function MapModule() {
   const [employee, setEmployeeData] = useState([]); //state variable for Employee information, This variable hols the data of Employee
   const [adminIDofEmployee, setAdminIDEmp] = useState(""); // state Variable for holding the Admin ID of which Admin does the driver belongs
   const [employeeId, setEmpID] = useState(""); // state Variable for holding the Employee ID
-  console.log("Admin ID of this Employee", employeeId);
+  //console.log("Admin ID of this Employee", employeeId);
   const [CustomerInformation, setUserInformation] = useState([]);
 
   //AsyncStorage to get the data of EMPLOYEE from login screen
@@ -158,7 +158,7 @@ export default function MapModule() {
       }
       let location = await Location.getCurrentPositionAsync({});
       if (isMounted) {
-        console.log("line 176", location);
+       // console.log("line 176", location);
         setLocation(location);
       }
     };
@@ -202,7 +202,7 @@ export default function MapModule() {
       longitude: location.coords.longitude,
     })
       .then(() => {
-        console.log("Update Success");
+        //console.log("Update Success");
       })
       .catch((error) => {
         console.log("Error updating", error);
@@ -213,11 +213,11 @@ export default function MapModule() {
     <View style={styles.container}>
       {location && (
         <MapView
-          // onMapReady={() => {
-          //   orderInformation.forEach((customer) => {
-          //     handleMarkerPress(customer);
-          //   });
-          // }}
+          onMapReady={() => {
+            orderInformation.forEach((customer) => {
+              handleMarkerPress(customer);
+            });
+          }}
           provider={PROVIDER_GOOGLE}
           mapType="hybrid"
           style={styles.map}

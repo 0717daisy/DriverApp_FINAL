@@ -12,7 +12,7 @@ import {
   ImageBackground,
   ToastAndroid,
 } from "react-native";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useLayoutEffect } from "react";
 import Custombtn from "../shared/customButton";
 import { FontAwesome5 } from "@expo/vector-icons";
 import { Ionicons } from "@expo/vector-icons";
@@ -53,7 +53,7 @@ export default function LoginModule({ navigation }) {
     return unsubscribe;
   }, [navigation]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const functionsetCurrentDate = () => {
       const today = new Date();
       const year = today.getFullYear();
@@ -84,13 +84,13 @@ export default function LoginModule({ navigation }) {
     console.log("starCountRef:", starCountRef);
     onValue(starCountRef, (snapshot) => {
       const data = snapshot.val();
-      console.log("inside", data);
+      //console.log("inside", data);
       if (data && data.emp_pass === empPassword) {
         AsyncStorage.setItem("EMPLOYEE_DATA", JSON.stringify(data));
         setEmployeeData(data);
         navigation.navigate("TabNavigator");
       } else {
-        alert("Employee not found");
+        //alert("Employee not found");
       }
     });
     const userLogId = Math.floor(Math.random() * 50000) + 100000;

@@ -5,6 +5,8 @@ import AcceptedScreen from '../screens/AcceptedScreen';
 import DeliveredScreen from '../screens/DeliveredScreen';
 import OutforDelivery from '../screens/OutforDelivery';
 import AllStatusScreen from '../screens/AllStatusScreen';
+import SearchOrder from '../screens/SearchOrder';
+import { FontAwesome5 } from '@expo/vector-icons';
 
 const Tab = createMaterialTopTabNavigator();
 
@@ -50,9 +52,29 @@ const OrderStatusTopTabNavigation = () => {
                 target: route.key,
               });
             };
+             // Add an icon component to the Search top tab
+             if (route.name === 'Search') {
+              return (
+                <View style={styles.tabItemStyle} key={index}>
+                  <FontAwesome5
+                    name="search"
+                    size={22}
+                    color={isFocused ? 'white' : 'black'}
+                    onPress={onPress}
+                    onLongPress={onLongPress}
+                  />
+                </View>
+              );
+            }
 
             return (
-              <View style={styles.tabItemStyle} key={index}>
+              <View
+          style={[
+            styles.tabItemStyle,
+            !isFocused && styles.focusedTabItemStyle,
+          ]}
+          key={index}
+        >
                 <Text
                   style={[
                     styles.labelStyle,
@@ -69,6 +91,7 @@ const OrderStatusTopTabNavigation = () => {
         </View>
       )}
     >
+      <Tab.Screen name="Search" component={SearchOrder} />
       <Tab.Screen name="All" component={AllStatusScreen} />
       <Tab.Screen name="Accepted" component={AcceptedScreen} />
       <Tab.Screen name="Out for Delivery" component={OutforDelivery} />
@@ -105,6 +128,15 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  tabItemStyle: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 50,
+  },
+  focusedTabItemStyle: {
+    height: 40,
   },
 });
 
