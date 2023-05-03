@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   Alert,
   FlatList,
-  ToastAndroid,
 } from "react-native";
 
 import React, { useState, useEffect } from "react";
@@ -303,10 +302,9 @@ export default function AllStatusScreen() {
       console.error("Failed to send push notification:", response.statusText);
     }
   }
-
+  
   return (
-    // <ScrollView contentContainerStyle={{flexGrow:1}}
-    <View style={{ flex: 1 }}>
+    <View style={styles.container}>
       <FlatList
         keyExtractor={(item) => item.id}
         data={orderInfo}
@@ -314,10 +312,9 @@ export default function AllStatusScreen() {
           <View style={styles.productWrapper}>
             <View style={styles.wrapperWaterProduct}>
               <View style={styles.viewWaterItem}>
-                <Text style={styles.productNameStyle}>
+              <Text style={styles.productNameStyle}>
                   {item.order_StoreName || "No Store name to display"}
                 </Text>
-
                 <View style={styles.orderIDWrapper}>
                   <Text style={styles.orderIDLabel}>Order ID</Text>
                   <Text style={styles.orderIDValue}>{item.orderID}</Text>
@@ -343,7 +340,7 @@ export default function AllStatusScreen() {
                   </Text>
                 </View>
 
-                <View style={styles.orderIDWrapper}>
+                {/* <View style={styles.orderIDWrapper}>
                   <Text style={styles.customerIDLabel}>Product Name</Text>
                   <Text style={styles.valueStyle1}>
                     {item.order_Products
@@ -353,7 +350,7 @@ export default function AllStatusScreen() {
                       )
                       .join(" & ")}
                   </Text>
-                </View>
+                </View> */}
 
                 {/* <View style={styles.customerIDWrapper}>
                   {item.order_Products.map((product) => (
@@ -395,6 +392,130 @@ export default function AllStatusScreen() {
                     {item.orderPaymentMethod}
                   </Text>
                 </View>
+                {/* Products order by the customer */}
+                {/* <View style={{ marginTop: 5, height: 80 }}> */}
+                <Text
+                  style={{
+                    fontFamily: "nunito-semibold",
+                    fontSize: 15,
+                    //  textAlign: "right",
+                    //flex: 1,
+                  }}
+                >
+                  Order Product(s)
+                </Text>
+
+                <FlatList
+                  showsHorizontalScrollIndicator={false}
+                  horizontal={true}
+                  contentContainerStyle={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                  }}
+                  data={item.order_Products}
+                  nestedScrollEnabled={true}
+                  keyExtractor={(product) => product.order_ProductId.toString()}
+                  renderItem={({ item: product }) => (
+                    <View
+                      style={styles.viewProducts}
+                      key={product.order_ProductId}
+                    >
+                      <View
+                        style={{
+                          //   backgroundColor: "brown",
+                          flexDirection: "row",
+                          //alignItems: "flex-end",
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontFamily: "bold",
+                            fontSize: 15,
+                            marginTop: 0,
+                          }}
+                        >
+                          Name  - 
+                        </Text>
+                        <Text
+                          style={{
+                            fontFamily: "bold",
+                            fontSize: 15,
+                            textAlign: "right",
+                            left: 0,
+
+                            flex: 1,
+                            //flex: 1,
+                          }}
+                        >
+                          {product.order_ProductName.length <= 8
+                            ? product.order_ProductName
+                            : product.order_ProductName.substring(0, 15) +
+                              "..."}
+                        </Text>
+                      </View>
+                      {/* size and unit */}
+                      <View
+                        style={{
+                          //   backgroundColor: "brown",
+                          flexDirection: "row",
+                          //alignItems: "flex-end",
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontFamily: "bold",
+                            fontSize: 15,
+                            marginTop: 0,
+                            textAlign: "right",
+                          }}
+                        >
+                          Size/Unit    -
+                        </Text>
+                        <Text
+                          style={{
+                            fontFamily: "bold",
+                            fontSize: 15,
+                            textAlign: "right",
+                            flex: 1,
+                            //flex: 1,
+                          }}
+                        >
+                          {product.order_size} {product.order_unit}
+                        </Text>
+                      </View>
+
+                      {/* product price */}
+                      <View
+                        style={{
+                          // backgroundColor: "brown",
+                          flexDirection: "row",
+                          //alignItems: "flex-end",
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontFamily: "bold",
+                            fontSize: 15,
+                            marginTop: 0,
+                          }}
+                        >
+                          Price            -
+                        </Text>
+                        <Text
+                          style={{
+                            fontFamily: "bold",
+                            fontSize: 15,
+                            textAlign: "right",
+                            flex: 1,
+                          }}
+                        >
+                          {product.order_ProductPrice}
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+                />
+                {/* </View> */}
                 <View
                   style={{
                     borderBottomWidth: 0.5,
@@ -408,9 +529,8 @@ export default function AllStatusScreen() {
                     {item.order_TotalAmount}
                   </Text>
                 </View>
-
-                {/* Start Here */}
-                <View style={{ flexDirection: "row" }}>
+                 {/* Start Here */}
+                 <View style={{ flexDirection: "row" }}>
                   <View style={styles.outOrder}>
                     <TouchableOpacity
                       style={[
@@ -495,11 +615,6 @@ export default function AllStatusScreen() {
             </View>
           </View>
         )}
-        ListHeaderComponent={
-          <View style={{ marginTop: 5 }}>
-            <Text style={styles.textwatername}> Order Details</Text>
-          </View>
-        }
       />
     </View>
   );
@@ -534,7 +649,7 @@ const styles = StyleSheet.create({
   },
   wrapperWaterProduct: {
     //backgroundColor: "red",
-    height: 420,
+    height: 470,
     marginBottom: -15,
   },
 
@@ -543,7 +658,7 @@ const styles = StyleSheet.create({
     padding: 3,
     marginTop: 0,
     width: "100%",
-    height: 370,
+    height: 460,
     marginLeft: 0,
     borderRadius: 10,
     marginRight: 5,
@@ -559,7 +674,7 @@ const styles = StyleSheet.create({
   productNameStyle: {
     fontSize: 24,
     fontFamily: "nunito-bold",
-    marginLeft: 80,
+    marginLeft: 110,
   },
   orderIDWrapper: {
     flexDirection: "row",
@@ -612,7 +727,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginLeft: 20,
   },
-
+  
   //station screen styles
 
   storeWrapper: {
@@ -764,5 +879,22 @@ const styles = StyleSheet.create({
 
     marginLeft: 160,
     justifyContent: "flex-end",
+  },
+  viewProducts: {
+    backgroundColor: "white",
+    padding: 3,
+    marginBottom: 0,
+    width: 190,
+    height: 90,
+    //marginLeft: 5,
+    borderRadius: 5,
+    marginRight: 5,
+    shadowColor: "black",
+    shadowRadius: 5,
+    shadowOffset: {
+      height: 5,
+      width: 5,
+    },
+    elevation: 4,
   },
 });
