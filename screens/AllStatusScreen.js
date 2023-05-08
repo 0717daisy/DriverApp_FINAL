@@ -5,14 +5,24 @@ import {
   TouchableOpacity,
   Alert,
   FlatList,
-  ToastAndroid,
 } from "react-native";
 
 import React, { useState, useEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { db } from "../firebaseConfig";
 
-import { getDatabase, ref, set, push, onValue, query, orderByChild, equalTo, update, get} from "firebase/database";
+import {
+  getDatabase,
+  ref,
+  set,
+  push,
+  onValue,
+  query,
+  orderByChild,
+  equalTo,
+  update,
+  get,
+} from "firebase/database";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -89,6 +99,7 @@ export default function AllStatusScreen() {
             .map((key) => ({
               id: key,
               ...data[key],
+              order_Products: Object.values(data[key].order_Products || {}),
             }))
             .filter(
               (order) =>
@@ -104,10 +115,9 @@ export default function AllStatusScreen() {
             .sort((a, b) => {
               const dateA = new Date(a.dateOrderAccepted).getTime();
               const dateB = new Date(b.dateOrderAccepted).getTime();
-              console.log("date",dateA );
+              console.log("date", dateA);
               return dateA - dateB;
-          });
-          // console.log("line 113",CustomerInformation);
+            });
           OrderInformation.forEach((order) => {
             const customer = CustomerInformation.find(
               (cust) => cust.cusId === order.cusId
@@ -121,7 +131,7 @@ export default function AllStatusScreen() {
             }
           });
           setOrderInfo(OrderInformation);
-          //console.log("line 96", OrderInformation);
+          console.log("OrderInformation", OrderInformation);
         } else {
           console.log("No orders found");
         }
@@ -152,7 +162,10 @@ export default function AllStatusScreen() {
 
   const handleStatusUpdate = (orderId, newStatus) => {
     const orderRef = ref(db, `ORDERS/${orderId}`);
-    update(orderRef, { order_OrderStatus: newStatus,  dateOrderDelivered: currentDate })
+    update(orderRef, {
+      order_OrderStatus: newStatus,
+      dateOrderDelivered: currentDate,
+    })
       .then(() => {
         console.log("Order status updated successfully");
         sendNotification(orderId, newStatus);
@@ -219,30 +232,30 @@ export default function AllStatusScreen() {
     const customerSnapshot = await get(customerRef);
     const pushToken = customerSnapshot.val().deviceToken;
     console.log("Line 149", pushToken);
-    
-     // Generate new integer key for Customer's notification
-     const notificationRef = ref(db, "NOTIFICATION");
-     const notificationSnapshot = await get(notificationRef);
-     const notificationKeys = Object.keys(notificationSnapshot.val());
-     const maxKey = Math.max(...notificationKeys);
-     const newKey = maxKey + 1;
- 
-     // Create new notification object with generated key
-     const newNotification = {
-         admin_ID: orderSnapshot.val().admin_ID,
-         body: `Your order is ${newStatus}.`,
-         cusId: customerId,
-         notificationDate: currentDate,
-         notificationID: newKey,
-         orderID: orderId,
-         dateDelivered: currentDate,
-         receiver: "Customer",
-         sender: "Driver",
-         status: "unread",
-         title: "Order Status"
-     };
 
-      // Save new notification object to database for customer
+    // Generate new integer key for Customer's notification
+    const notificationRef = ref(db, "NOTIFICATION");
+    const notificationSnapshot = await get(notificationRef);
+    const notificationKeys = Object.keys(notificationSnapshot.val());
+    const maxKey = Math.max(...notificationKeys);
+    const newKey = maxKey + 1;
+
+    // Create new notification object with generated key
+    const newNotification = {
+      admin_ID: orderSnapshot.val().admin_ID,
+      body: `Your order is ${newStatus}.`,
+      cusId: customerId,
+      notificationDate: currentDate,
+      notificationID: newKey,
+      orderID: orderId,
+      dateDelivered: currentDate,
+      receiver: "Customer",
+      sender: "Driver",
+      status: "unread",
+      title: "Order Status",
+    };
+
+    // Save new notification object to database for customer
     await set(ref(db, `NOTIFICATION/${newKey}`), newNotification);
 
     // Generate new integer key for Admin's notification
@@ -254,48 +267,44 @@ export default function AllStatusScreen() {
 
     // Create new notification object with generated key
     const newNotifications = {
-        admin_ID: orderSnapshot.val().admin_ID,
-        body: `The order of customer ${customerId} is ${newStatus}.`,
-        cusId: customerId,
-        notificationDate: currentDate,
-        notificationID: newKeys,
-        orderID: orderId,
-        dateDelivered: currentDate,
-        receiver: "Admin",
-        sender: "Driver",
-        status: "unread",
-        title: "Order Status"
+      admin_ID: orderSnapshot.val().admin_ID,
+      body: `The order of customer ${customerId} is ${newStatus}.`,
+      cusId: customerId,
+      notificationDate: currentDate,
+      notificationID: newKeys,
+      orderID: orderId,
+      dateDelivered: currentDate,
+      receiver: "Admin",
+      sender: "Driver",
+      status: "unread",
+      title: "Order Status",
     };
 
-     // Save new notification object to database
-   await set(ref(db, `NOTIFICATION/${newKeys}`), newNotifications);
-   
+    // Save new notification object to database
+    await set(ref(db, `NOTIFICATION/${newKeys}`), newNotifications);
+
     const response = await fetch("https://exp.host/--/api/v2/push/send", {
-        method: "POST",
-        headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            to: pushToken,
-            title: `${storeName}`, // Update title with store name
-            body: `Your order is ${newStatus}.`,
-        }),
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        to: pushToken,
+        title: `${storeName}`, // Update title with store name
+        body: `Your order is ${newStatus}.`,
+      }),
     });
 
     if (response.ok) {
-        console.log("Push notification sent successfully.");
+      console.log("Push notification sent successfully.");
     } else {
-        console.error("Failed to send push notification:", response.statusText);
+      console.error("Failed to send push notification:", response.statusText);
     }
-}
-
+  }
   
-  
-
   return (
-    // <ScrollView contentContainerStyle={{flexGrow:1}}
-    <View style={{ flex: 1 }}>
+    <View style={styles.container}>
       <FlatList
         keyExtractor={(item) => item.id}
         data={orderInfo}
@@ -303,10 +312,9 @@ export default function AllStatusScreen() {
           <View style={styles.productWrapper}>
             <View style={styles.wrapperWaterProduct}>
               <View style={styles.viewWaterItem}>
-                <Text style={styles.productNameStyle}>
+              <Text style={styles.productNameStyle}>
                   {item.order_StoreName || "No Store name to display"}
                 </Text>
-
                 <View style={styles.orderIDWrapper}>
                   <Text style={styles.orderIDLabel}>Order ID</Text>
                   <Text style={styles.orderIDValue}>{item.orderID}</Text>
@@ -331,12 +339,35 @@ export default function AllStatusScreen() {
                     {item.customerAddress}
                   </Text>
                 </View>
-                <View style={styles.orderIDWrapper}>
+
+                {/* <View style={styles.orderIDWrapper}>
                   <Text style={styles.customerIDLabel}>Product Name</Text>
-                  <Text style={styles.valueStyle}>
-                    {item.order_ProductName}
+                  <Text style={styles.valueStyle1}>
+                    {item.order_Products
+                      .map(
+                        (product) =>
+                          `${product.order_ProductName} (${product.order_size} ${product.order_unit})`
+                      )
+                      .join(" & ")}
                   </Text>
-                </View>
+                </View> */}
+
+                {/* <View style={styles.customerIDWrapper}>
+                  {item.order_Products.map((product) => (
+                    <View style={styles.customerIDLabel}>
+                      <Text style={styles.orderProductLabel}>
+                        Product Name:
+                      </Text>
+                      <Text style={styles.orderProductValue}>
+                        {product.order_ProductName}
+                      </Text>
+                      <Text style={styles.customerIDWrapper}>Size:</Text>
+                      <Text style={styles.customerIDValue}>
+                        {product.order_size} {product.order_unit}
+                      </Text>
+                    </View>
+                  ))}
+                </View> */}
                 <View style={styles.orderIDWrapper}>
                   <Text style={styles.customerIDLabel}>Delivery Type</Text>
                   <Text style={styles.valueStyle}>
@@ -350,23 +381,141 @@ export default function AllStatusScreen() {
                   </Text>
                 </View>
                 <View style={styles.orderIDWrapper}>
-                  <Text style={styles.customerIDLabel}>Order Method</Text>
-                  <Text style={styles.valueStyle}>
-                    {item.order_OrderMethod}
-                  </Text>
-                </View>
-                <View style={styles.orderIDWrapper}>
-                  <Text style={styles.customerIDLabel}>Product Price</Text>
-                  <Text style={styles.valueStyle}>
-                    {item.order_WaterPrice} x {item.order_Quantity}
-                  </Text>
-                </View>
-                <View style={styles.orderIDWrapper}>
                   <Text style={styles.customerIDLabel}>Status</Text>
                   <Text style={styles.valueStyle}>
                     {item.order_OrderStatus}
                   </Text>
                 </View>
+                <View style={styles.orderIDWrapper}>
+                  <Text style={styles.customerIDLabel}>Payment Method</Text>
+                  <Text style={styles.valueStyle}>
+                    {item.orderPaymentMethod}
+                  </Text>
+                </View>
+                {/* Products order by the customer */}
+                {/* <View style={{ marginTop: 5, height: 80 }}> */}
+                <Text
+                  style={{
+                    fontFamily: "nunito-semibold",
+                    fontSize: 15,
+                    //  textAlign: "right",
+                    //flex: 1,
+                  }}
+                >
+                  Order Product(s)
+                </Text>
+
+                <FlatList
+                  showsHorizontalScrollIndicator={false}
+                  horizontal={true}
+                  contentContainerStyle={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                  }}
+                  data={item.order_Products}
+                  nestedScrollEnabled={true}
+                  keyExtractor={(product) => product.order_ProductId.toString()}
+                  renderItem={({ item: product }) => (
+                    <View
+                      style={styles.viewProducts}
+                      key={product.order_ProductId}
+                    >
+                      <View
+                        style={{
+                          //   backgroundColor: "brown",
+                          flexDirection: "row",
+                          //alignItems: "flex-end",
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontFamily: "bold",
+                            fontSize: 15,
+                            marginTop: 0,
+                          }}
+                        >
+                          Name  - 
+                        </Text>
+                        <Text
+                          style={{
+                            fontFamily: "bold",
+                            fontSize: 15,
+                            textAlign: "right",
+                            left: 0,
+
+                            flex: 1,
+                            //flex: 1,
+                          }}
+                        >
+                          {product.order_ProductName.length <= 8
+                            ? product.order_ProductName
+                            : product.order_ProductName.substring(0, 15) +
+                              "..."}
+                        </Text>
+                      </View>
+                      {/* size and unit */}
+                      <View
+                        style={{
+                          //   backgroundColor: "brown",
+                          flexDirection: "row",
+                          //alignItems: "flex-end",
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontFamily: "bold",
+                            fontSize: 15,
+                            marginTop: 0,
+                            textAlign: "right",
+                          }}
+                        >
+                          Size/Unit    -
+                        </Text>
+                        <Text
+                          style={{
+                            fontFamily: "bold",
+                            fontSize: 15,
+                            textAlign: "right",
+                            flex: 1,
+                            //flex: 1,
+                          }}
+                        >
+                          {product.order_size} {product.order_unit}
+                        </Text>
+                      </View>
+
+                      {/* product price */}
+                      <View
+                        style={{
+                          // backgroundColor: "brown",
+                          flexDirection: "row",
+                          //alignItems: "flex-end",
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontFamily: "bold",
+                            fontSize: 15,
+                            marginTop: 0,
+                          }}
+                        >
+                          Price            -
+                        </Text>
+                        <Text
+                          style={{
+                            fontFamily: "bold",
+                            fontSize: 15,
+                            textAlign: "right",
+                            flex: 1,
+                          }}
+                        >
+                          {product.order_ProductPrice}
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+                />
+                {/* </View> */}
                 <View
                   style={{
                     borderBottomWidth: 0.5,
@@ -380,9 +529,8 @@ export default function AllStatusScreen() {
                     {item.order_TotalAmount}
                   </Text>
                 </View>
-
-                {/* Start Here */}
-                <View style={{ flexDirection: "row" }}>
+                 {/* Start Here */}
+                 <View style={{ flexDirection: "row" }}>
                   <View style={styles.outOrder}>
                     <TouchableOpacity
                       style={[
@@ -467,11 +615,6 @@ export default function AllStatusScreen() {
             </View>
           </View>
         )}
-        ListHeaderComponent={
-          <View style={{ marginTop: 5 }}>
-            <Text style={styles.textwatername}> Order Details</Text>
-          </View>
-        }
       />
     </View>
   );
@@ -506,7 +649,7 @@ const styles = StyleSheet.create({
   },
   wrapperWaterProduct: {
     //backgroundColor: "red",
-    height: 420,
+    height: 470,
     marginBottom: -15,
   },
 
@@ -515,7 +658,7 @@ const styles = StyleSheet.create({
     padding: 3,
     marginTop: 0,
     width: "100%",
-    height: 370,
+    height: 460,
     marginLeft: 0,
     borderRadius: 10,
     marginRight: 5,
@@ -531,7 +674,7 @@ const styles = StyleSheet.create({
   productNameStyle: {
     fontSize: 24,
     fontFamily: "nunito-bold",
-    marginLeft: 80,
+    marginLeft: 110,
   },
   orderIDWrapper: {
     flexDirection: "row",
@@ -584,7 +727,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginLeft: 20,
   },
-
+  
   //station screen styles
 
   storeWrapper: {
@@ -614,6 +757,12 @@ const styles = StyleSheet.create({
   valueStyle: {
     fontFamily: "nunito-semibold",
     fontSize: 15,
+    textAlign: "right",
+    flex: 1,
+  },
+  valueStyle1: {
+    fontFamily: "nunito-semibold",
+    fontSize: 12,
     textAlign: "right",
     flex: 1,
   },
@@ -730,5 +879,22 @@ const styles = StyleSheet.create({
 
     marginLeft: 160,
     justifyContent: "flex-end",
+  },
+  viewProducts: {
+    backgroundColor: "white",
+    padding: 3,
+    marginBottom: 0,
+    width: 190,
+    height: 90,
+    //marginLeft: 5,
+    borderRadius: 5,
+    marginRight: 5,
+    shadowColor: "black",
+    shadowRadius: 5,
+    shadowOffset: {
+      height: 5,
+      width: 5,
+    },
+    elevation: 4,
   },
 });

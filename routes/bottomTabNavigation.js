@@ -148,7 +148,7 @@ function MyTabsNavigator() {
         name="Notification"
         component={notificationModule}
         options={{
-          tabBarBadge: unreadCount
+          tabBarBadge: unreadCount === 0 ? null : unreadCount,
           //tabBarBadge: 1
         }}
       />
