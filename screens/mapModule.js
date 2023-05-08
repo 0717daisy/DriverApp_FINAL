@@ -185,7 +185,7 @@ export default function MapModule() {
               longitude: location.coords.longitude,
             });
           }
-          /// console.log("My current location",location);
+          // console.log("My current location",location);
         }
       );
     };
@@ -197,7 +197,7 @@ export default function MapModule() {
           longitude: location.coords.longitude,
         });
       }
-    }, 2000);
+    }, 30000);
     getLocation();
     return () => {
       isMounted = false;
@@ -212,37 +212,39 @@ export default function MapModule() {
   const [polylineCoordsDriverToCustomer, setpolylineCoordsDriverToCustomer] =
     useState([]);
     
-  // const handleCustomerMarkerPress = (order, location) => {
-  //   console.log("line 147", order.id);
-  //   //addLongitude
-  //   const polylineCoordinates = [
-  //     {
-  //       latitude: location?.coords.latitude || 0,
-  //       longitude: location?.coords.longitude || 0,
-  //     },
-  //     {
-  //       latitude: order?.customerLatitude || 0,
-  //       longitude: order?.customerLongitude || 0,
-  //     },
-  //   ];
-  //   // if (location && location.coords) {
-  //   //   polylineCoordinates.push({
-  //   //     latitude: location.coords.latitude,
-  //   //     longitude: location.coords.longitude,
-  //   //   });
-  //   // }
+  const handleCustomerMarkerPress = (order, location) => {
+    console.log("line 147", order.id);
+    //addLongitude
+    const polylineCoordinates = [
+      {
+        latitude: location?.coords.latitude || 0,
+        longitude: location?.coords.longitude || 0,
+      },
+      {
+        latitude: order?.customerLatitude || 0,
+        longitude: order?.customerLongitude || 0,
+      },
+    ];
+    // if (location && location.coords) {
+    //   polylineCoordinates.push({
+    //     latitude: location.coords.latitude,
+    //     longitude: location.coords.longitude,
+    //   });
+    // }
 
-  //    // Add your current location to the beginning of the polyline
-  // if (location && location.coords) {
-  //   polylineCoordinates.push({
-  //     latitude: location.coords.latitude,
-  //     longitude: location.coords.longitude,
-  //   });
-  // }
-  // console.log("line 240",polylineCoordinates)
-  //   setpolylineCoordsDriverToCustomer(polylineCoordinates);
-  //   // setSelectedStore(item);
-  // };
+     // Add your current location to the beginning of the polyline
+  if (location && location.coords) {
+    polylineCoordinates.push({
+      latitude: location.coords.latitude,
+      longitude: location.coords.longitude,
+    });
+  }
+  console.log("line 240",polylineCoordinates)
+    setpolylineCoordsDriverToCustomer(polylineCoordinates);
+    // setSelectedStore(item);
+  };
+
+
 //   const handleCustomerMarkerPress = (order, location) => {
 //  //   console.log("My current location", location);
 //  const polylineCoordinates = [
@@ -276,7 +278,7 @@ export default function MapModule() {
 
   useEffect(() => {
     //console.log("Admin ID of this Employee", employeeId);
-    if (!employeeId || !location || !location.coords) {
+    if (!employeeId || !location || !location.coords){
       return;
     }
     const ordersRef = ref(db, "EMPLOYEES/");

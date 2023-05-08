@@ -109,7 +109,6 @@ export default function AllStatusScreen() {
                   order.order_OrderStatus === "Delivered" ||
                   order.order_OrderStatus === "Payment Received") &&
                 order.order_OrderTypeValue === "Delivery" &&
-                order.driverId === customerId &&
                 order.admin_ID === adminID
             )
             .sort((a, b) => {
@@ -119,15 +118,28 @@ export default function AllStatusScreen() {
               return dateA - dateB;
             });
           OrderInformation.forEach((order) => {
-            const customer = CustomerInformation.find(
-              (cust) => cust.cusId === order.cusId
-            );
-            if (customer) {
-              order.customerLatitude = customer.lattitudeLocation;
-              order.customerLongitude = customer.longitudeLocation;
-              order.customerAddress = customer.address;
-              order.customerPhone = customer.phoneNumber;
-              order.fullName = customer.firstName + " " + customer.lastName;
+            if (
+              order.order_newDeliveryAddressOption === "Same as Home Address"
+            ) {
+              const customer = CustomerInformation.find(
+                (cust) => cust.cusId === order.cusId
+              );
+              if (customer) {
+                order.customerLatitude = customer.lattitudeLocation;
+                order.customerLongitude = customer.longitudeLocation;
+                order.customerAddress = customer.address;
+                order.customerPhone = customer.phoneNumber;
+                order.fullName = customer.firstName + " " + customer.lastName;
+              }
+            } else if (
+              order.order_newDeliveryAddressOption === "New Delivery Address"
+            ) {
+              order.customerLatitude = order.order_newDeliveryAddress.latitude;
+              order.customerLongitude =
+                order.order_newDeliveryAddress.longitude;
+              order.customerAddress = order.order_newDeliveryAddress.address;
+              order.customerPhone =
+                order.order_newDeliveryAddress.order_newDeliveryAddContactNumber;
             }
           });
           setOrderInfo(OrderInformation);
@@ -140,7 +152,7 @@ export default function AllStatusScreen() {
         console.log("Error fetching orders", error);
       }
     );
-  }, [customerId, adminID, CustomerInformation]);
+  }, [adminID, CustomerInformation]);
 
   useEffect(() => {
     const functionsetCurrentDate = () => {
@@ -302,9 +314,9 @@ export default function AllStatusScreen() {
       console.error("Failed to send push notification:", response.statusText);
     }
   }
-  
   return (
     <View style={styles.container}>
+      {orderInfo && orderInfo.length > 0 ? (
       <FlatList
         keyExtractor={(item) => item.id}
         data={orderInfo}
@@ -312,7 +324,7 @@ export default function AllStatusScreen() {
           <View style={styles.productWrapper}>
             <View style={styles.wrapperWaterProduct}>
               <View style={styles.viewWaterItem}>
-              <Text style={styles.productNameStyle}>
+                <Text style={styles.productNameStyle}>
                   {item.order_StoreName || "No Store name to display"}
                 </Text>
                 <View style={styles.orderIDWrapper}>
@@ -330,44 +342,27 @@ export default function AllStatusScreen() {
                 <View style={styles.customerIDWrapper}>
                   <Text style={styles.customerIDLabel}>Phone Number</Text>
                   <Text style={styles.customerIDValue}>
-                    {item.customerPhone}
+                    {item.order_newDeliveryAddressOption ===
+                    "Same as Home Address"
+                      ? item.customerPhone
+                      : item.order_newDeliveryAddressOption ===
+                        "New Delivery Address"
+                      ? `${item.order_newDeliveryAddContactNumber}`
+                      : "No number to display"}
                   </Text>
                 </View>
                 <View style={styles.customerIDWrapper}>
-                  <Text style={styles.customerIDLabel}>Address</Text>
+                  <Text style={styles.customerIDLabel}>Delivery Address</Text>
                   <Text style={styles.customerIDValue}>
-                    {item.customerAddress}
+                    {item.order_newDeliveryAddressOption ===
+                    "Same as Home Address"
+                      ? item.customerAddress
+                      : item.order_newDeliveryAddressOption ===
+                        "New Delivery Address"
+                      ? `${item.order_newDeliveryAddress} (${item.order_newDeliveryAddLandmark})`
+                      : "No delivery address to display"}
                   </Text>
                 </View>
-
-                {/* <View style={styles.orderIDWrapper}>
-                  <Text style={styles.customerIDLabel}>Product Name</Text>
-                  <Text style={styles.valueStyle1}>
-                    {item.order_Products
-                      .map(
-                        (product) =>
-                          `${product.order_ProductName} (${product.order_size} ${product.order_unit})`
-                      )
-                      .join(" & ")}
-                  </Text>
-                </View> */}
-
-                {/* <View style={styles.customerIDWrapper}>
-                  {item.order_Products.map((product) => (
-                    <View style={styles.customerIDLabel}>
-                      <Text style={styles.orderProductLabel}>
-                        Product Name:
-                      </Text>
-                      <Text style={styles.orderProductValue}>
-                        {product.order_ProductName}
-                      </Text>
-                      <Text style={styles.customerIDWrapper}>Size:</Text>
-                      <Text style={styles.customerIDValue}>
-                        {product.order_size} {product.order_unit}
-                      </Text>
-                    </View>
-                  ))}
-                </View> */}
                 <View style={styles.orderIDWrapper}>
                   <Text style={styles.customerIDLabel}>Delivery Type</Text>
                   <Text style={styles.valueStyle}>
@@ -434,7 +429,7 @@ export default function AllStatusScreen() {
                             marginTop: 0,
                           }}
                         >
-                          Name  - 
+                          Name -
                         </Text>
                         <Text
                           style={{
@@ -469,7 +464,7 @@ export default function AllStatusScreen() {
                             textAlign: "right",
                           }}
                         >
-                          Size/Unit    -
+                          Size/Unit -
                         </Text>
                         <Text
                           style={{
@@ -499,7 +494,7 @@ export default function AllStatusScreen() {
                             marginTop: 0,
                           }}
                         >
-                          Price            -
+                          Price -
                         </Text>
                         <Text
                           style={{
@@ -512,9 +507,43 @@ export default function AllStatusScreen() {
                           {product.order_ProductPrice}
                         </Text>
                       </View>
+                      <View
+                        style={{
+                          // backgroundColor: "brown",
+                          flexDirection: "row",
+                          //alignItems: "flex-end",
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontFamily: "bold",
+                            fontSize: 15,
+                            marginTop: 0,
+                          }}
+                        >
+                          Qty -
+                        </Text>
+                        <Text
+                          style={{
+                            fontFamily: "bold",
+                            fontSize: 15,
+                            textAlign: "right",
+                            flex: 1,
+                          }}
+                        >
+                          {product.qtyPerItem}
+                        </Text>
+                      </View>
                     </View>
                   )}
                 />
+
+                <View style={styles.orderIDWrapper}>
+                  <Text style={styles.customerIDLabel}>Overall Quantity</Text>
+                  <Text style={styles.valueStyle}>
+                    {item.order_overAllQuantities}
+                  </Text>
+                </View>
                 {/* </View> */}
                 <View
                   style={{
@@ -529,8 +558,8 @@ export default function AllStatusScreen() {
                     {item.order_TotalAmount}
                   </Text>
                 </View>
-                 {/* Start Here */}
-                 <View style={{ flexDirection: "row" }}>
+                {/* Start Here */}
+                <View style={{ flexDirection: "row" }}>
                   <View style={styles.outOrder}>
                     <TouchableOpacity
                       style={[
@@ -610,15 +639,52 @@ export default function AllStatusScreen() {
                       <Text style={styles.buttonText}>Delivered</Text>
                     </TouchableOpacity>
                   </View>
+                  <View style={styles.outOrder1}>
+                    <TouchableOpacity
+                      style={[
+                        {
+                          backgroundColor: "green",
+                          height: 50,
+                          width: 80,
+                          borderRadius: 10,
+                          alignItems: "center",
+                        },
+                        // Update the disabled property to only disable the button if the order status is not "Delivered"
+                        {
+                          opacity:
+                            item.order_OrderStatus === "Accepted" ||
+                            item.order_OrderStatus === "Out for Delivery" ||
+                            item.order_OrderStatus === "Payment Received"
+                              ? 0.5
+                              : 1,
+                        },
+                      ]}
+                      // Update the onPress function to only allow button press if order status is "Delivered"
+                      onPress={() => {
+                        if (item.order_OrderStatus === "Delivered") {
+                          handleStatusUpdate(item.id, "Payment Received");
+                        }
+                      }}
+                      // Update the disabled property to only disable the button if the order status is not "Delivered"
+                      disabled={item.order_OrderStatus !== "Delivered"}
+                    >
+                      <Text style={styles.buttonText}>Payment Received</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </View>
             </View>
           </View>
         )}
       />
+      ) : (
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+          <Text style={{fontWeight:'bold', fontSize: 20}}>No Order Assigned</Text>
+        </View>
+      )}
     </View>
-  );
-}
+    );
+    }
 
 const styles = StyleSheet.create({
   container: {
@@ -638,7 +704,7 @@ const styles = StyleSheet.create({
     //backgroundColor: "green",
     width: "100%",
     marginHorizontal: 100,
-    marginTop: 40,
+    marginTop: 50,
   },
   textwatername: {
     fontSize: 15,
@@ -649,7 +715,7 @@ const styles = StyleSheet.create({
   },
   wrapperWaterProduct: {
     //backgroundColor: "red",
-    height: 470,
+    height: 600,
     marginBottom: -15,
   },
 
@@ -658,7 +724,7 @@ const styles = StyleSheet.create({
     padding: 3,
     marginTop: 0,
     width: "100%",
-    height: 460,
+    height: 560,
     marginLeft: 0,
     borderRadius: 10,
     marginRight: 5,
@@ -727,7 +793,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginLeft: 20,
   },
-  
+
   //station screen styles
 
   storeWrapper: {
@@ -875,9 +941,8 @@ const styles = StyleSheet.create({
     //textAlign: "center",
   },
   outOrder1: {
-    // backgroundColor: "yellow",
-
-    marginLeft: 160,
+    //  backgroundColor: "yellow",
+    marginLeft: 40,
     justifyContent: "flex-end",
   },
   viewProducts: {

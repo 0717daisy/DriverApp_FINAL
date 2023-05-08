@@ -91,7 +91,6 @@ export default function SearchOrder() {
                   order.order_OrderStatus === "Delivered" ||
                   order.order_OrderStatus === "Payment Received") &&
                 order.order_OrderTypeValue === "Delivery" &&
-                order.driverId === customerId &&
                 order.admin_ID === adminID
             )
             .sort((a, b) => {
@@ -101,15 +100,28 @@ export default function SearchOrder() {
               return dateA - dateB;
             });
           OrderInformation.forEach((order) => {
-            const customer = CustomerInformation.find(
-              (cust) => cust.cusId === order.cusId
-            );
-            if (customer) {
-              order.customerLatitude = customer.lattitudeLocation;
-              order.customerLongitude = customer.longitudeLocation;
-              order.customerAddress = customer.address;
-              order.customerPhone = customer.phoneNumber;
-              order.fullName = customer.firstName + " " + customer.lastName;
+            if (
+              order.order_newDeliveryAddressOption === "Same as Home Address"
+            ) {
+              const customer = CustomerInformation.find(
+                (cust) => cust.cusId === order.cusId
+              );
+              if (customer) {
+                order.customerLatitude = customer.lattitudeLocation;
+                order.customerLongitude = customer.longitudeLocation;
+                order.customerAddress = customer.address;
+                order.customerPhone = customer.phoneNumber;
+                order.fullName = customer.firstName + " " + customer.lastName;
+              }
+            } else if (
+              order.order_newDeliveryAddressOption === "New Delivery Address"
+            ) {
+              order.customerLatitude = order.order_newDeliveryAddress.latitude;
+              order.customerLongitude =
+                order.order_newDeliveryAddress.longitude;
+              order.customerAddress = order.order_newDeliveryAddress.address;
+              order.customerPhone =
+                order.order_newDeliveryAddress.order_newDeliveryAddContactNumber;
             }
           });
           setOrderInfo(OrderInformation);
@@ -122,7 +134,7 @@ export default function SearchOrder() {
         console.log("Error fetching orders", error);
       }
     );
-  }, [customerId, adminID, CustomerInformation]);
+  }, [adminID, CustomerInformation]);
 
   const handleSearch = () => {
     if (!searchedOrderId || searchedOrderId.trim() === "") {
@@ -185,44 +197,27 @@ export default function SearchOrder() {
                 <View style={styles.customerIDWrapper}>
                   <Text style={styles.customerIDLabel}>Phone Number</Text>
                   <Text style={styles.customerIDValue}>
-                    {item.customerPhone}
+                    {item.order_newDeliveryAddressOption ===
+                    "Same as Home Address"
+                      ? item.customerPhone
+                      : item.order_newDeliveryAddressOption ===
+                        "New Delivery Address"
+                      ? `${item.order_newDeliveryAddContactNumber}`
+                      : "No number to display"}
                   </Text>
                 </View>
                 <View style={styles.customerIDWrapper}>
-                  <Text style={styles.customerIDLabel}>Address</Text>
+                  <Text style={styles.customerIDLabel}>Delivery Address</Text>
                   <Text style={styles.customerIDValue}>
-                    {item.customerAddress}
+                    {item.order_newDeliveryAddressOption ===
+                    "Same as Home Address"
+                      ? item.customerAddress
+                      : item.order_newDeliveryAddressOption ===
+                        "New Delivery Address"
+                      ? `${item.order_newDeliveryAddress} (${item.order_newDeliveryAddLandmark})`
+                      : "No delivery address to display"}
                   </Text>
                 </View>
-
-                {/* <View style={styles.orderIDWrapper}>
-                  <Text style={styles.customerIDLabel}>Product Name</Text>
-                  <Text style={styles.valueStyle1}>
-                    {item.order_Products
-                      .map(
-                        (product) =>
-                          `${product.order_ProductName} (${product.order_size} ${product.order_unit})`
-                      )
-                      .join(" & ")}
-                  </Text>
-                </View> */}
-
-                {/* <View style={styles.customerIDWrapper}>
-                  {item.order_Products.map((product) => (
-                    <View style={styles.customerIDLabel}>
-                      <Text style={styles.orderProductLabel}>
-                        Product Name:
-                      </Text>
-                      <Text style={styles.orderProductValue}>
-                        {product.order_ProductName}
-                      </Text>
-                      <Text style={styles.customerIDWrapper}>Size:</Text>
-                      <Text style={styles.customerIDValue}>
-                        {product.order_size} {product.order_unit}
-                      </Text>
-                    </View>
-                  ))}
-                </View> */}
                 <View style={styles.orderIDWrapper}>
                   <Text style={styles.customerIDLabel}>Delivery Type</Text>
                   <Text style={styles.valueStyle}>
@@ -289,7 +284,7 @@ export default function SearchOrder() {
                             marginTop: 0,
                           }}
                         >
-                          Name  - 
+                          Name -
                         </Text>
                         <Text
                           style={{
@@ -324,7 +319,7 @@ export default function SearchOrder() {
                             textAlign: "right",
                           }}
                         >
-                          Size/Unit    -
+                          Size/Unit -
                         </Text>
                         <Text
                           style={{
@@ -354,7 +349,7 @@ export default function SearchOrder() {
                             marginTop: 0,
                           }}
                         >
-                          Price            -
+                          Price -
                         </Text>
                         <Text
                           style={{
@@ -367,9 +362,43 @@ export default function SearchOrder() {
                           {product.order_ProductPrice}
                         </Text>
                       </View>
+                      <View
+                        style={{
+                          // backgroundColor: "brown",
+                          flexDirection: "row",
+                          //alignItems: "flex-end",
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontFamily: "bold",
+                            fontSize: 15,
+                            marginTop: 0,
+                          }}
+                        >
+                          Qty -
+                        </Text>
+                        <Text
+                          style={{
+                            fontFamily: "bold",
+                            fontSize: 15,
+                            textAlign: "right",
+                            flex: 1,
+                          }}
+                        >
+                          {product.qtyPerItem}
+                        </Text>
+                      </View>
                     </View>
                   )}
                 />
+
+                <View style={styles.orderIDWrapper}>
+                  <Text style={styles.customerIDLabel}>Overall Quantity</Text>
+                  <Text style={styles.valueStyle}>
+                    {item.order_overAllQuantities}
+                  </Text>
+                </View>
                 {/* </View> */}
                 <View
                   style={{
@@ -398,11 +427,13 @@ const styles = StyleSheet.create({
     // padding: 8,
     // marginLeft: 30,
     flex: 1,
+    //backgroundColor: "lightcyan",
   },
   container: {
     // padding: 8,
     // marginLeft: 30,
     flex: 1,
+    backgroundColor: "lightcyan",
   },
   searchInput: {
     height: 40,
@@ -415,7 +446,7 @@ const styles = StyleSheet.create({
     borderColor: "#aaaaaa",
     top: 40,
     fontWeight: "bold",
-    marginLeft:37,
+    marginLeft: 37,
   },
   onPresssearch: {
     marginLeft: 330,
@@ -460,7 +491,7 @@ const styles = StyleSheet.create({
   },
   wrapperWaterProduct: {
     //backgroundColor: "red",
-    height: 420,
+    height: 600,
     marginBottom: -15,
   },
 
@@ -469,7 +500,7 @@ const styles = StyleSheet.create({
     padding: 3,
     marginTop: 0,
     width: "100%",
-    height: 370,
+    height: 560,
     marginLeft: 0,
     borderRadius: 10,
     marginRight: 5,
