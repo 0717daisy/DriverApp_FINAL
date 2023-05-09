@@ -167,10 +167,20 @@ export default function DeliveredScreen() {
 
   const handleStatusUpdate = (orderId, newStatus) => {
     const orderRef = ref(db, `ORDERS/${orderId}`);
-    update(orderRef, {
+    const updates = {
       order_OrderStatus: newStatus,
-      dateOrderDelivered: currentDate,
-    })
+    };
+  
+    // Add the appropriate date property based on the new status
+    if (newStatus === "Out for Delivery") {
+      updates.dateOrderOutforDelivery = currentDate;
+    } else if (newStatus === "Delivered") {
+      updates.dateOrderDelivered = currentDate;
+    } else if (newStatus === "Payment Received") {
+      updates.datePaymentReceived = currentDate;
+    }
+  
+    update(orderRef, updates)
       .then(() => {
         console.log("Order status updated successfully");
         sendNotification(orderId, newStatus);
@@ -935,7 +945,7 @@ const styles = StyleSheet.create({
   },
   outOrder1: {
     //  backgroundColor: "yellow",
-    marginLeft: 40,
+    marginLeft: 20,
     justifyContent: "flex-end",
   },
   viewProducts: {

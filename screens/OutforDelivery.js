@@ -102,7 +102,7 @@ export default function OutforDelivery() {
                 (order.order_OrderStatus === "Out for Delivery") &&
                 order.order_OrderTypeValue === "Delivery" &&
                 order.driverId === customerId &&
-                order.admin_ID === adminID
+              order.admin_ID === adminID
             )
             .sort((a, b) => {
               const dateA = new Date(a.dateOrderAccepted).getTime();
@@ -167,10 +167,20 @@ export default function OutforDelivery() {
 
   const handleStatusUpdate = (orderId, newStatus) => {
     const orderRef = ref(db, `ORDERS/${orderId}`);
-    update(orderRef, {
+    const updates = {
       order_OrderStatus: newStatus,
-      dateOrderDelivered: currentDate,
-    })
+    };
+  
+    // Add the appropriate date property based on the new status
+    if (newStatus === "Out for Delivery") {
+      updates.dateOrderOutforDelivery = currentDate;
+    } else if (newStatus === "Delivered") {
+      updates.dateOrderDelivered = currentDate;
+    } else if (newStatus === "Payment Received") {
+      updates.datePaymentReceived = currentDate;
+    }
+  
+    update(orderRef, updates)
       .then(() => {
         console.log("Order status updated successfully");
         sendNotification(orderId, newStatus);
@@ -178,7 +188,6 @@ export default function OutforDelivery() {
       .catch((error) => {
         console.log("Error updating order status", error);
       });
-
     const userLogId = Math.floor(Math.random() * 50000) + 100000;
     const newUserLog = userLogId;
 
@@ -936,7 +945,7 @@ const styles = StyleSheet.create({
   },
   outOrder1: {
     //  backgroundColor: "yellow",
-    marginLeft: 40,
+    marginLeft: 20,
     justifyContent: "flex-end",
   },
   viewProducts: {
