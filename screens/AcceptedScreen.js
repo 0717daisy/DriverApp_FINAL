@@ -659,19 +659,20 @@ export default function AcceptedScreen() {
                             opacity:
                               item.order_OrderStatus === "Accepted" ||
                               item.order_OrderStatus === "Out for Delivery" ||
-                              item.order_OrderStatus === "Payment Received"
-                                ? 0.5
-                                : 1,
-                          },
-                        ]}
-                        // Update the onPress function to only allow button press if order status is "Delivered"
-                        onPress={() => {
-                          if (item.order_OrderStatus === "Delivered") {
-                            handleStatusUpdate(item.id, "Payment Received");
-                          }
-                        }}
-                        // Update the disabled property to only disable the button if the order status is not "Delivered"
-                        disabled={item.order_OrderStatus !== "Delivered"}
+                              item.order_OrderStatus === "Payment Received" ||
+                            item.orderPaymentMethod === "Gcash"
+                            ? 0.5
+                            : 1,
+                      },
+                    ]}
+                    // Update the onPress function to only allow button press if order status is "Delivered"
+                    onPress={() => {
+                      if (item.order_OrderStatus === "Delivered") {
+                        handleStatusUpdate(item.id, "Payment Received");
+                      }
+                    }}
+                    // Update the disabled property to only disable the button if the order status is not "Delivered"
+                    disabled={item.order_OrderStatus !== "Delivered" || item.orderPaymentMethod === "Gcash"}
                       >
                         <Text style={styles.buttonText}>Payment Received</Text>
                       </TouchableOpacity>

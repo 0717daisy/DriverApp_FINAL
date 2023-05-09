@@ -657,7 +657,8 @@ export default function DeliveredScreen() {
                           opacity:
                             item.order_OrderStatus === "Accepted" ||
                             item.order_OrderStatus === "Out for Delivery" ||
-                            item.order_OrderStatus === "Payment Received"
+                            item.order_OrderStatus === "Payment Received" ||
+                            item.orderPaymentMethod === "Gcash"
                               ? 0.5
                               : 1,
                         },
@@ -669,7 +670,7 @@ export default function DeliveredScreen() {
                         }
                       }}
                       // Update the disabled property to only disable the button if the order status is not "Delivered"
-                      disabled={item.order_OrderStatus !== "Delivered"}
+                      disabled={item.order_OrderStatus !== "Delivered" || item.orderPaymentMethod === "Gcash"}
                     >
                       <Text style={styles.buttonText}>Payment Received</Text>
                     </TouchableOpacity>
