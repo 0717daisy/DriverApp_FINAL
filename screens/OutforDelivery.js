@@ -945,7 +945,7 @@ const styles = StyleSheet.create({
   },
   outOrder1: {
     //  backgroundColor: "yellow",
-    marginLeft: 20,
+    marginLeft: 38,
     justifyContent: "flex-end",
   },
   viewProducts: {

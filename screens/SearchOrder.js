@@ -446,10 +446,10 @@ const styles = StyleSheet.create({
     borderColor: "#aaaaaa",
     top: 40,
     fontWeight: "bold",
-    marginLeft: 20,
+    marginLeft: 25,
   },
   onPresssearch: {
-    marginLeft: 304,
+    marginLeft: 310,
     top: 4,
   },
   searchResultsContainer: {

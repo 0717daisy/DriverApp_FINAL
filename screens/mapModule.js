@@ -46,7 +46,7 @@ export default function MapModule() {
         }
       })
       .catch((error) => {
-        console.log(error);
+        console.log("line 49", error);
         alert("Error fetching data: " + error);
       });
   }, []);
@@ -96,7 +96,7 @@ export default function MapModule() {
             (order) =>
               order.order_OrderStatus === "Accepted" ||
               (order.order_OrderStatus === "Out for Delivery" &&
-                order.order_OrderTypeValue === "Delivery" &&
+                order.order_OrderTypeValue === "delivery" &&
                 order.order_OrderStatus !== "Delivered" &&
                 order.driverId === employeeId)
           );
@@ -129,7 +129,7 @@ export default function MapModule() {
 
           //const lastFiltered=acceptedOrders.filter((order)=>order.driverId===employeeId);
 
-          console.log("LINE 130", acceptedOrders)
+         // console.log("LINE 130", acceptedOrders);
           // console.log(
           //   "MAP SCREEN---> ACCEPTED ORDER DATA INFORMATION",
           //   acceptedOrders.length
@@ -158,6 +158,8 @@ export default function MapModule() {
   //console.log("Order information-->", orderInformation);
 
   const [location, setLocation] = useState();
+  const [previousLocation, setPreviousLocation] = useState(null);
+  // console.log("location",location)
   const [markerPosition, setMarkerPosition] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
   //console.log("line 146",location);
@@ -165,10 +167,11 @@ export default function MapModule() {
   const mapRef = useRef(null);
 
   //get user's location
-  useEffect(() => {
+  useLayoutEffect(() => {
     let subscription;
     let interval;
     let isMounted = true;
+    let previousLocation = null;
     const getLocation = async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
@@ -176,7 +179,7 @@ export default function MapModule() {
         return;
       }
       subscription = await Location.watchPositionAsync(
-        { accuracy: Location.Accuracy.High, timeInterval: 5000 },
+        { accuracy: Location.Accuracy.High, timeInterval: 30000 },
         (location) => {
           if (isMounted) {
             setLocation(location);
@@ -197,7 +200,7 @@ export default function MapModule() {
           longitude: location.coords.longitude,
         });
       }
-    }, 30000);
+    }, 2000);
     getLocation();
     return () => {
       isMounted = false;
@@ -211,7 +214,7 @@ export default function MapModule() {
   //when click the marker of the customer it will create an polyline
   const [polylineCoordsDriverToCustomer, setpolylineCoordsDriverToCustomer] =
     useState([]);
-    
+
   const handleCustomerMarkerPress = (order, location) => {
     console.log("line 147", order.id);
     //addLongitude
@@ -232,43 +235,18 @@ export default function MapModule() {
     //   });
     // }
 
-     // Add your current location to the beginning of the polyline
-  if (location && location.coords) {
-    polylineCoordinates.push({
-      latitude: location.coords.latitude,
-      longitude: location.coords.longitude,
-    });
-  }
-  console.log("line 240",polylineCoordinates)
+    // Add your current location to the beginning of the polyline
+    if (location && location.coords) {
+      polylineCoordinates.push({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      });
+    }
+    console.log("line 240", polylineCoordinates);
     setpolylineCoordsDriverToCustomer(polylineCoordinates);
     // setSelectedStore(item);
   };
-
-
-//   const handleCustomerMarkerPress = (order, location) => {
-//  //   console.log("My current location", location);
-//  const polylineCoordinates = [
-//   {
-//     latitude: order?.customerLatitude || 0,
-//     longitude: order?.customerLongitude || 0,
-//     orderId: order.id,
-//   },
-//   {
-//     latitude: location?.coords.latitude || 0,
-//     longitude: location?.coords.longitude || 0,
-//   },
-// ];
-
-//     if (location && location.coords) {
-//       polylineCoordinates.unshift({
-//         latitude: location.coords.latitude,
-//         longitude: location.coords.longitude,
-//       });
-//     }
-//   //  console.log("262", polylineCoordinates);
-//     setpolylineCoordsDriverToCustomer(polylineCoordinates);
-//     //setLocation(location?.coords);
-//   };
+ 
 
   const handleMarkerPress = (place) => {
     setSelectedPlace(place);
@@ -276,27 +254,52 @@ export default function MapModule() {
 
   //update EMPLOYEES COllection with latlong
 
+  // useEffect(() => {
+  //   //console.log("Admin ID of this Employee", employeeId);
+  //   if (!employeeId || !location || !location.coords) {
+  //     return;
+  //   }
+  //   const ordersRef = ref(db, "EMPLOYEES/");
+  //   const orderRef = child(ordersRef, employeeId.toString());
+  //   update(orderRef, {
+  //     lattitude: location.coords.latitude,
+  //     longitude: location.coords.longitude,
+  //   })
+  //     .then(() => {
+  //       // console.log("Update Success");
+  //     })
+  //     .catch((error) => {
+  //       console.log("Error updating", error);
+  //     });
+  // }, [employeeId, location,previousLocation]);
   useEffect(() => {
     //console.log("Admin ID of this Employee", employeeId);
-    if (!employeeId || !location || !location.coords){
+    if (!employeeId || !location || !location.coords) {
       return;
     }
-    const ordersRef = ref(db, "EMPLOYEES/");
-    const orderRef = child(ordersRef, employeeId.toString());
-    update(orderRef, {
-      lattitude: location.coords.latitude,
-      longitude: location.coords.longitude,
-    })
-      .then(() => {
-        // console.log("Update Success");
+    if (
+      !previousLocation ||
+      Math.abs(location.coords.latitude - previousLocation.coords.latitude) >
+        0.0001 ||
+      Math.abs(location.coords.longitude - previousLocation.coords.longitude) >
+        0.0001
+    ) {
+      const ordersRef = ref(db, "EMPLOYEES/");
+      const orderRef = child(ordersRef, employeeId.toString());
+      update(orderRef, {
+        lattitude: location.coords.latitude,
+        longitude: location.coords.longitude,
       })
-      .catch((error) => {
-        console.log("Error updating", error);
-      });
-  }, [employeeId, location]);
-
+        .then(() => {
+          // console.log("Update Success");
+        })
+        .catch((error) => {
+          console.log("Error updating", error);
+        });
+    }
+  }, [employeeId, location, previousLocation]);
   //chat gpt codes
- 
+
   return (
     <View style={styles.container}>
       {location && (
@@ -374,20 +377,19 @@ export default function MapModule() {
               </Marker>
             ))}
 
-          {polylineCoordsDriverToCustomer.length >=2  && (
+          {polylineCoordsDriverToCustomer.length >= 2 && (
             <MapViewDirections
               origin={polylineCoordsDriverToCustomer[0]}
               //destination={polylineCoordsDriverToCustomer[polylineCoordsDriverToCustomer.length - 1]}
               destination={polylineCoordsDriverToCustomer[1]}
               strokeWidth={3}
-              waypoints={polylineCoordsDriverToCustomer.slice(2,-1)}
+              waypoints={polylineCoordsDriverToCustomer.slice(2, -1)}
               strokeColor="red"
               apikey={GOOGLEMAP_APIKEY}
             />
           )}
         </MapView>
       )}
-      
     </View>
   );
 }

@@ -108,20 +108,60 @@ export default function NotificationScreen() {
     }
   };
 
-  // const getTimeDifference = (notificationTime) => {
-  //   const timeDifference = moment.duration(
-  //     currentTime.diff(moment(notificationTime))
-  //   );
-  //   const days = timeDifference.days();
-  //   const hours = timeDifference.hours();
-  //   if (days > 0) {
-  //     return `${days} day${days > 1 ? "s" : ""} ago`;
-  //   } else if (hours > 0) {
-  //     return `${hours} hour${hours > 1 ? "s" : ""} ago`;
-  //   } else {
-  //     return "just now";
-  //   }
-  // };
+  const handleClickMarkAll = async () => {
+    // Update the status of all unread notifications to "read"
+    const employeeData = JSON.parse(
+      await AsyncStorage.getItem("EMPLOYEE_DATA")
+    );
+    if (employeeData) {
+      const driverId = employeeData.emp_id;
+    const notificationsRef = ref(db, "NOTIFICATION/");
+    const notificationsQuery = query(
+      notificationsRef,
+      orderByChild("driverId"),
+      equalTo(driverId)
+    );
+    onValue(
+      notificationsQuery,
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          const NotifInformation = Object.keys(data)
+            .map((key) => ({
+              id: key,
+              ...data[key],
+            }))
+            .filter((notification) => notification.receiver === "Driver");
+          setNotifications(NotifInformation);
+          setReadNotifications(
+            NotifInformation.filter(
+              (notification) => notification.status === "read"
+            )
+          );
+          const unreadNotifications = NotifInformation.filter(
+            (notification) => notification.status === "unread"
+          );
+          
+          // Update the status of all unread notifications to "read"
+          unreadNotifications.forEach(async (notification) => {
+            const notificationRef = ref(db, `NOTIFICATION/${notification.id}`);
+            await update(notificationRef, { status: "read" });
+          });
+          
+          // Update the unread count in the state to 0
+          updateUnreadCount(unreadNotifications.length);
+        }
+      },
+      (error) => {
+        console.error(error);
+      }
+    )
+  }};
+
+  
+  
+  
+  
   const handleDeleteNotification = (notificationID) => {
     setNotifications(
       notifications.filter((notification) => notification.notificationID !== notificationID)
@@ -137,7 +177,14 @@ export default function NotificationScreen() {
     <SafeAreaView style={styles.container}>
       {notifications.length > 0 ? (
         <ScrollView>
+          <View>
           <Text style={styles.text1}>Notifications</Text>
+          </View>
+          <View style={{marginLeft:220}}> 
+          <TouchableOpacity onPress={handleClickMarkAll}>
+                  <Text style={styles.text3}> Mark all as read</Text>
+                </TouchableOpacity>
+          </View>
           {notifications
   .sort((a, b) => new Date(b.notificationDate) - new Date(a.notificationDate))
   .map((notification) => (
@@ -182,7 +229,7 @@ export default function NotificationScreen() {
         </ScrollView>
       ) : (
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <Text style={styles.noNotificationText}></Text>
+          <Text style={styles.noNotificationText}>No Notification</Text>
         </View>
       )}
     </SafeAreaView>
@@ -231,6 +278,10 @@ const styles = StyleSheet.create({
     marginBottom: 20,
    
   },
+  text3:{
+   color:"blue",
+   textDecorationLine:"underline",
+  },
   deleteButton: {
     backgroundColor: "black",
     marginTop: 5,
@@ -266,6 +317,10 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     color: "white",
+    fontWeight: "bold",
+  },
+  noNotificationText:{
+    fontSize: 20,
     fontWeight: "bold",
   },
 });

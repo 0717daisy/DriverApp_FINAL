@@ -76,10 +76,10 @@ export default function LoginModule({ navigation }) {
     if (isLoggingIn) {
       return;
     }
-
+  
     // Set isLoggingIn flag to true
     setIsLoggingIn(true);
-
+  
     const starCountRef = ref(db, "EMPLOYEES/" + empId);
     console.log("starCountRef:", starCountRef);
     onValue(starCountRef, (snapshot) => {
@@ -89,30 +89,35 @@ export default function LoginModule({ navigation }) {
         AsyncStorage.setItem("EMPLOYEE_DATA", JSON.stringify(data));
         setEmployeeData(data);
         navigation.navigate("TabNavigator");
+  
+        // Only create new entry in DRIVERSLOG if login is successful
+        const userLogId = Math.floor(Math.random() * 50000) + 100000;
+        const newUserLog = userLogId;
+  
+        set(ref(db, `DRIVERSLOG/${newUserLog}`), {
+          dateLogin: currentDate,
+          empId: empId,
+        })
+          .then(async () => {
+            console.log("New:", newUserLog);
+          })
+          .catch((error) => {
+            console.log("Errroorrrr:", error);
+            Alert();
+          })
+          .finally(() => {
+            // Set isLoggingIn flag to false after completion
+            setIsLoggingIn(false);
+          });
       } else {
-        //alert("Employee not found");
-      }
-    });
-    const userLogId = Math.floor(Math.random() * 50000) + 100000;
-    const newUserLog = userLogId;
-
-    set(ref(db, `DRIVERSLOG/${newUserLog}`), {
-      dateLogin: currentDate,
-      empId: empId,
-    })
-      .then(async () => {
-        console.log("New:", newUserLog);
-      })
-      .catch((error) => {
-        console.log("Errroorrrr:", error);
-        Alert();
-      })
-      .finally(() => {
+       // alert("Employee not found");
+  
         // Set isLoggingIn flag to false after completion
         setIsLoggingIn(false);
-      });
+      }
+    });
   };
-
+  
   return (
     <SafeAreaView style={globalStyles.safeviewStyle}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
