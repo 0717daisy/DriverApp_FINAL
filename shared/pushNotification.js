@@ -93,25 +93,28 @@ async function registerForPushNotificationsAsync(customerData,expoPushToken) {
     console.log(token);
     // Update the user's token in the database
     const user = auth.currentUser;
-
+  
     if (user && customerData && customerData.emp_id) {
       console.log('Hey expoPushToken:', expoPushToken)
-     const customerRef=ref(db,`EMPLOYEES/${customerData.emp_id}`);
-     console.log("line 92",customerData.emp_id);
-     update(customerRef,{
-      deviceToken:expoPushToken
-     })
-     .then(()=>{
-     // alert("Profile Updated Succesfully");
-     })
-     .catch((error) => {
-      console.log(error);
-      alert("Error updating customer data: ", error);
-    });
+      const customerRef = ref(db,`EMPLOYEES/${customerData.emp_id}`);
+      console.log("line 92",customerData.emp_id);
+      if (user) {
+        update(customerRef, {
+          deviceToken: expoPushToken
+        })
+        .then(() => {
+          // alert("Profile Updated Successfully");
+        })
+        .catch((error) => {
+          console.log(error);
+          alert("Error updating customer data: ", error);
+        });
+      } else {
+        console.log("User not found, skipping database update");
+      }
     }
   } else {
     alert("Must use physical device for Push Notifications");
   }
-
   return token;
 }

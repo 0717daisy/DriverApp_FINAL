@@ -91,16 +91,38 @@ export default function MapModule() {
             id: key,
             ...data[key],
           }));
-          //console.log("line 90",orderDataInfo)
+          console.log("line 90",orderDataInfo)
+          // const acceptedOrders = orderDataInfo.filter(
+          //   (order) =>
+          //     // order.order_OrderStatus === "Accepted" ||
+          //     // (order.order_OrderStatus === "Out for Delivery" &&
+          //     //   order.order_OrderTypeValue === "Delivery" &&
+          //     //   order.order_OrderTypeValue === "Received Order" &&
+          //     //   order.order_OrderTypeValue === "Payment Received" &&
+          //     //   order.order_OrderStatus !== "Delivered" &&
+          //     //   order.driverId === employeeId)
+          //     (order.order_OrderStatus === "Accepted" ||
+          //     order.order_OrderStatus === "Out for Delivery" ||
+          //     order.order_OrderStatus === "Received Order" ||
+          //     order.order_OrderStatus === "Payment Received") &&
+          //     order.driverId === employeeId
+
+               
+          // );
           const acceptedOrders = orderDataInfo.filter(
             (order) =>
-              order.order_OrderStatus === "Accepted" ||
-              (order.order_OrderStatus === "Out for Delivery" &&
-                order.order_OrderTypeValue === "delivery" &&
-                order.order_OrderStatus !== "Delivered" &&
+              (order.order_OrderStatus === "Accepted" ||
+                (order.order_OrderStatus === "Out for Delivery" &&
+                  order.order_OrderTypeValue === "Delivery" &&
+                  order.order_OrderStatus === "Received Order" &&
+                  order.order_OrderStatus === "Payment Received" &&
+                  order.order_OrderStatus !== "Delivered" &&
+                  order.driverId === employeeId)) ||
+              (order.order_OrderTypeValue === "Delivery" &&
                 order.driverId === employeeId)
           );
-          //   console.log("line 102", acceptedOrders);
+          
+            console.log("line 1121", acceptedOrders);
 
           // Fetch customer information and add to each order object
           acceptedOrders.forEach((order) => {
@@ -129,7 +151,7 @@ export default function MapModule() {
 
           //const lastFiltered=acceptedOrders.filter((order)=>order.driverId===employeeId);
 
-         // console.log("LINE 130", acceptedOrders);
+          console.log("LINE 141", acceptedOrders);
           // console.log(
           //   "MAP SCREEN---> ACCEPTED ORDER DATA INFORMATION",
           //   acceptedOrders.length
@@ -167,49 +189,92 @@ export default function MapModule() {
   const mapRef = useRef(null);
 
   //get user's location
-  useLayoutEffect(() => {
-    let subscription;
+  // useLayoutEffect(() => {
+  //   let subscription;
+  //   let interval;
+  //   let isMounted = true;
+  //   let previousLocation = null;
+  //   const getLocation = async () => {
+  //     let { status } = await Location.requestForegroundPermissionsAsync();
+  //     if (status !== "granted") {
+  //       setErrorMsg("Permission to access location was denied");
+  //       return;
+  //     }
+  //     subscription = await Location.watchPositionAsync(
+  //       { accuracy: Location.Accuracy.High, timeInterval: 30000 },
+  //       (location) => {
+  //         if (isMounted) {
+  //           setLocation(location);
+  //           setMarkerPosition({
+  //             latitude: location.coords.latitude,
+  //             longitude: location.coords.longitude,
+  //           });
+  //         }
+  //         // console.log("My current location",location);
+  //       }
+  //     );
+  //   };
+
+  //   interval = setInterval(() => {
+  //     if (isMounted && location) {
+  //       setMarkerPosition({
+  //         latitude: location.coords.latitude,
+  //         longitude: location.coords.longitude,
+  //       });
+  //     }
+  //   }, 2000);
+  //   getLocation();
+  //   return () => {
+  //     isMounted = false;
+  //     if (subscription) {
+  //       subscription.remove();
+  //     }
+  //     clearInterval(interval);
+  //   };
+  // }, [location]);
+
+  //get user's location
+  const [title, setTitle] = useState("My Location");
+  useEffect(() => {
     let interval;
     let isMounted = true;
-    let previousLocation = null;
     const getLocation = async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
+      let { status } = await Location.requestBackgroundPermissionsAsync();
       if (status !== "granted") {
         setErrorMsg("Permission to access location was denied");
         return;
       }
-      subscription = await Location.watchPositionAsync(
-        { accuracy: Location.Accuracy.High, timeInterval: 30000 },
-        (location) => {
-          if (isMounted) {
-            setLocation(location);
-            setMarkerPosition({
-              latitude: location.coords.latitude,
-              longitude: location.coords.longitude,
-            });
-          }
-          // console.log("My current location",location);
-        }
-      );
-    };
+      let location = await Location.getCurrentPositionAsync({});
+      if (isMounted) {
+        console.log("User current location", location);
 
-    interval = setInterval(() => {
-      if (isMounted && location) {
-        setMarkerPosition({
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-        });
+        setLocation(location);
       }
-    }, 2000);
-    getLocation();
-    return () => {
-      isMounted = false;
-      if (subscription) {
-        subscription.remove();
-      }
-      clearInterval(interval);
+
+      // let loc=await Location.watchPositionAsync(location);
+      //  console.log("line 125",location)
     };
-  }, [location]);
+    getLocation();
+    // interval = setInterval(async () => {
+    //   let location = await Location.getCurrentPositionAsync({});
+    //   if (
+    //     isMounted &&
+    //     JSON.stringify(location.coords) !== JSON.stringify(prevLocation?.coords)
+    //   ) {
+    //     console.log(
+    //       "Line 135----->Latitude:",
+    //       location.coords.latitude,
+    //       "Longitude:",
+    //       location.coords.longitude
+    //     );
+    //   }
+    //   setPrevLocation(location);
+    // }, 3000);
+    // return () => {
+    //   isMounted = false;
+    //   clearInterval(interval);
+    // };
+  }, []);
 
   //when click the marker of the customer it will create an polyline
   const [polylineCoordsDriverToCustomer, setpolylineCoordsDriverToCustomer] =
@@ -246,7 +311,6 @@ export default function MapModule() {
     setpolylineCoordsDriverToCustomer(polylineCoordinates);
     // setSelectedStore(item);
   };
- 
 
   const handleMarkerPress = (place) => {
     setSelectedPlace(place);
@@ -272,33 +336,52 @@ export default function MapModule() {
   //       console.log("Error updating", error);
   //     });
   // }, [employeeId, location,previousLocation]);
+
+  // useEffect(() => {
+  //   //console.log("Admin ID of this Employee", employeeId);
+  //   if (!employeeId || !location || !location.coords) {
+  //     return;
+  //   }
+  //   if (
+  //     !previousLocation ||
+  //     Math.abs(location.coords.latitude - previousLocation.coords.latitude) >
+  //       0.0001 ||
+  //     Math.abs(location.coords.longitude - previousLocation.coords.longitude) >
+  //       0.0001
+  //   ) {
+  //     const ordersRef = ref(db, "EMPLOYEES/");
+  //     const orderRef = child(ordersRef, employeeId.toString());
+  //     update(orderRef, {
+  //       lattitude: location.coords.latitude,
+  //       longitude: location.coords.longitude,
+  //     })
+  //       .then(() => {
+  //         // console.log("Update Success");
+  //       })
+  //       .catch((error) => {
+  //         console.log("Error updating", error);
+  //       });
+  //   }
+  // }, [employeeId, location, previousLocation]);
+  //update the driver latlong in EMPLOYEES collection
+  //update customer COllection with latlong
   useEffect(() => {
-    //console.log("Admin ID of this Employee", employeeId);
     if (!employeeId || !location || !location.coords) {
       return;
     }
-    if (
-      !previousLocation ||
-      Math.abs(location.coords.latitude - previousLocation.coords.latitude) >
-        0.0001 ||
-      Math.abs(location.coords.longitude - previousLocation.coords.longitude) >
-        0.0001
-    ) {
-      const ordersRef = ref(db, "EMPLOYEES/");
-      const orderRef = child(ordersRef, employeeId.toString());
-      update(orderRef, {
-        lattitude: location.coords.latitude,
-        longitude: location.coords.longitude,
+    const driverRef = ref(db, "EMPLOYEES/");
+    const driverQuery = child(driverRef, employeeId.toString());
+    update(driverQuery, {
+      lattitude: location.coords.latitude,
+      longitude: location.coords.longitude,
+    })
+      .then(() => {
+        //console.log("Customer Collection--> Latlong-->Update Success");
       })
-        .then(() => {
-          // console.log("Update Success");
-        })
-        .catch((error) => {
-          console.log("Error updating", error);
-        });
-    }
-  }, [employeeId, location, previousLocation]);
-  //chat gpt codes
+      .catch((error) => {
+        console.log("Error updating", error);
+      });
+  }, [employeeId, location]);
 
   return (
     <View style={styles.container}>
@@ -334,7 +417,7 @@ export default function MapModule() {
           showsIndoorLevelPicker={true}
           toolbarEnabled={true}
         >
-          {markerPosition && (
+          {/* {markerPosition && (
             <Marker
               //  coordinate={{
               //    latitude: location.coords.latitude,
@@ -345,12 +428,26 @@ export default function MapModule() {
               title="My Location"
             >
               <FontAwesome name="motorcycle" size={23} color="yellow" />
+
+
             </Marker>
-          )}
+          )} */}
+          <Marker
+            coordinate={{
+              latitude: location.coords.latitude,
+              longitude: location.coords.longitude,
+            }}
+            //coordinate={markerPosition}
+            showCallout={true}
+            title={title}
+          >
+            <FontAwesome name="motorcycle" size={23} color="yellow" />
+          </Marker>
           {orderInformation &&
             orderInformation.length > 0 &&
             orderInformation.map((order) => (
               <Marker
+              
                 key={order.id}
                 coordinate={{
                   latitude: order.customerLatitude,

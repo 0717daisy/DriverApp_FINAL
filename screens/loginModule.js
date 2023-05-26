@@ -97,6 +97,7 @@ export default function LoginModule({ navigation }) {
         set(ref(db, `DRIVERSLOG/${newUserLog}`), {
           dateLogin: currentDate,
           empId: empId,
+          action: "login",
         })
           .then(async () => {
             console.log("New:", newUserLog);
@@ -110,7 +111,7 @@ export default function LoginModule({ navigation }) {
             setIsLoggingIn(false);
           });
       } else {
-       // alert("Employee not found");
+        alert("Employee not found");
   
         // Set isLoggingIn flag to false after completion
         setIsLoggingIn(false);
