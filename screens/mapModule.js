@@ -443,7 +443,7 @@ export default function MapModule() {
           >
             <FontAwesome name="motorcycle" size={23} color="yellow" />
           </Marker>
-          {orderInformation &&
+          {/* {orderInformation &&
             orderInformation.length > 0 &&
             orderInformation.map((order) => (
               <Marker
@@ -472,7 +472,7 @@ export default function MapModule() {
                   </View>
                 </Callout>
               </Marker>
-            ))}
+            ))} */}
 
           {polylineCoordsDriverToCustomer.length >= 2 && (
             <MapViewDirections

@@ -19,6 +19,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { globalStyles } from "../ForStyle/GlobalStyles";
 import { db } from "../firebaseConfig";
+import { SHA256 } from 'crypto-js';
 import {
   ref,
   get,
@@ -76,20 +77,18 @@ export default function LoginModule({ navigation }) {
     if (isLoggingIn) {
       return;
     }
-  
     // Set isLoggingIn flag to true
     setIsLoggingIn(true);
-  
     const starCountRef = ref(db, "EMPLOYEES/" + empId);
     console.log("starCountRef:", starCountRef);
     onValue(starCountRef, (snapshot) => {
       const data = snapshot.val();
-      //console.log("inside", data);
-      if (data && data.emp_pass === empPassword) {
+      console.log("inside", data);
+      const hashedInputPassword = SHA256(empPassword).toString();
+      if (data && data.emp_pass === hashedInputPassword) {
         AsyncStorage.setItem("EMPLOYEE_DATA", JSON.stringify(data));
         setEmployeeData(data);
         navigation.navigate("TabNavigator");
-  
         // Only create new entry in DRIVERSLOG if login is successful
         const userLogId = Math.floor(Math.random() * 50000) + 100000;
         const newUserLog = userLogId;
