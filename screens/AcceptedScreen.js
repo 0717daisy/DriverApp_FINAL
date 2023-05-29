@@ -11,6 +11,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { db } from "../firebaseConfig";
 
+
+
 import {
   ref,
   onValue,
@@ -40,7 +42,7 @@ export default function AcceptedScreen() {
   const [employeeData, setEmployeeData] = useState();
   const [customerId, setCustomerId] = useState(null);
   console.log("Driver:", customerId);
-  const [orderInfo, setOrderInfo] = useState([]);
+  
   const [adminID, setAdminID] = useState("");
   const [customerData, setCustomerData] = useState("");
   const [currentDate, setCurrentDate] = useState("");
@@ -82,10 +84,12 @@ export default function AcceptedScreen() {
   }, []);
 
   const [CustomerInformation, setUserInformation] = useState([]);
+  
   useEffect(() => {
     console.log("driver", adminID);
     const orderRef = ref(db, "ORDERS/");
     const Orderquery = query(orderRef, orderByChild("cusId"));
+   // console.log("123123",Orderquery);
     onValue(
       Orderquery,
       (snapshot) => {
@@ -145,8 +149,9 @@ export default function AcceptedScreen() {
         console.log("Error fetching orders", error);
       }
     );
-  }, [adminID, CustomerInformation]);
+  }, [adminID, CustomerInformation,customerId]);
 
+  const [orderInfo, setOrderInfo] = useState([]);
   useEffect(() => {
     const functionsetCurrentDate = () => {
       const today = new Date();
@@ -245,6 +250,7 @@ export default function AcceptedScreen() {
     const notificationKeys = Object.keys(notificationSnapshot.val());
     const maxKey = Math.max(...notificationKeys);
     const newKey = maxKey + 1;
+
 
     // Create new notification object with generated key
     const newNotification = {
