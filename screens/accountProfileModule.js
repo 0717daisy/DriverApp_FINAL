@@ -29,6 +29,7 @@ import { ref, update, set,onValue} from "firebase/database";
 import { firebase } from "../firebaseStorage";
 import * as ImagePicker from "expo-image-picker";
 import { db, auth } from "../firebaseConfig";
+import { SHA256 } from 'crypto-js';
 
 export default function AccountProfileModule({ navigation }) {
   const [text, onChangeText] = React.useState("");
@@ -77,13 +78,15 @@ export default function AccountProfileModule({ navigation }) {
     // Define a regex pattern for a strong password
     const strongPasswordPattern =
       /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
-
-    if (passwords.oldPassword === employeeData.emp_pass) {
+      const hashedInputPassword = SHA256(passwords.oldPassword).toString();
+    if (hashedInputPassword === employeeData.emp_pass) {
       if (passwords.newPassword === passwords.confirmPassword) {
         if (strongPasswordPattern.test(passwords.newPassword)) {
+          const hashedNewPassword = SHA256(passwords.newPassword).toString();
+  
           // Check if the new password matches the strong password pattern
           const employeeRef = ref(db, `EMPLOYEES/${employeeData.emp_id}`);
-          update(employeeRef, { emp_pass: passwords.newPassword })
+          update(employeeRef, { emp_pass: hashedNewPassword })
             .then(() => {
               Alert.alert("Success", "Password updated successfully");
               setPasswords({
