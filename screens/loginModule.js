@@ -19,7 +19,9 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { globalStyles } from "../ForStyle/GlobalStyles";
 import { db } from "../firebaseConfig";
+
 import { SHA256 } from "crypto-js";
+
 import {
   ref,
   get,
@@ -84,11 +86,13 @@ export default function LoginModule({ navigation }) {
     console.log("starCountRef:", starCountRef);
     onValue(starCountRef, (snapshot) => {
       const data = snapshot.val();
+
       //console.log("inside", data);
       const hashedInputPassword = SHA256(empPassword).toString();
      // console.log("Hashed input password:", hashedInputPassword);
       //console.log("Stored hashed password:", data.emp_pass);
       if (data && data.emp_pass=== hashedInputPassword) {
+
         AsyncStorage.setItem("EMPLOYEE_DATA", JSON.stringify(data));
         setEmployeeData(data);
         navigation.navigate("TabNavigator");
