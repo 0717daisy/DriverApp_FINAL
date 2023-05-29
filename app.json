@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "tubigMobileProject",
-    "slug": "tubigMobileProject",
+    "name": "2big Driver",
+    "slug": "2big-Driver",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -19,20 +19,20 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "infoPlist":{
+      "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "This app needs your location to function properly.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs your location to function properly even when running in the background."
-        
       }
-
-      
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FFFFFF",
-        "notification": {
-          "channelId": "messages"
+        "backgroundColor": "#FFFFFF"
+      },
+      "config":{
+
+        "googleMaps": {
+          "apiKey": "AIzaSyAxLhFoYq5wB82Ql0q1EkDrE1g5XyuqmEU"
         }
       },
       "permissions": [
@@ -42,11 +42,16 @@
         "CAMERA_ROLL",
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE"
-      ]
-     
+      ],
+      "package": "com.tubigdriver.com"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "0e42ceb9-1042-4055-8961-e9bb3c14272a"
+      }
     }
   }
 }

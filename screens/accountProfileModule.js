@@ -17,6 +17,7 @@ import {
   BackHandler,
 } from "react-native";
 import React, { useEffect, useState } from "react";
+import { SHA256 } from "crypto-js"
 import {
   Ionicons,
   MaterialIcons,
@@ -77,13 +78,15 @@ export default function AccountProfileModule({ navigation }) {
     // Define a regex pattern for a strong password
     const strongPasswordPattern =
       /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
-
-    if (passwords.oldPassword === employeeData.emp_pass) {
+      const hashedInputPassword = SHA256(passwords.oldPassword).toString();
+    if (hashedInputPassword === employeeData.emp_pass) {
       if (passwords.newPassword === passwords.confirmPassword) {
         if (strongPasswordPattern.test(passwords.newPassword)) {
+          const hashedNewPassword = SHA256(passwords.newPassword).toString();
+  
           // Check if the new password matches the strong password pattern
           const employeeRef = ref(db, `EMPLOYEES/${employeeData.emp_id}`);
-          update(employeeRef, { emp_pass: passwords.newPassword })
+          update(employeeRef, { emp_pass: hashedNewPassword })
             .then(() => {
               Alert.alert("Success", "Password updated successfully");
               setPasswords({
