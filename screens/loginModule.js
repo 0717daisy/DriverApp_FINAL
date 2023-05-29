@@ -113,8 +113,10 @@ export default function LoginModule({ navigation }) {
             setIsLoggingIn(false);
           });
       } else {
+
         console.log("not match");
         alert("Employee not found");
+
 
         // Set isLoggingIn flag to false after completion
         setIsLoggingIn(false);

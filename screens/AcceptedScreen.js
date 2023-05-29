@@ -209,15 +209,6 @@ export default function AcceptedScreen() {
           driverId: orderData.driverId,
           admin_ID: orderData.admin_ID,
           cusId: orderData.cusId,
-          order_DeliveryTypeValue: orderData.order_DeliveryTypeValue,
-          order_OrderMethod: orderData.order_OrderMethod,
-          order_OrderTypeValue: orderData.order_OrderTypeValue,
-          order_ProductName: orderData.order_ProductName,
-          order_Quantity: orderData.order_Quantity,
-          order_ReservationDate: orderData.order_ReservationDate,
-          order_StoreName: orderData.order_StoreName,
-          order_TotalAmount: orderData.order_TotalAmount,
-          order_WaterPrice: orderData.order_WaterPrice,
           actions: newStatus, // Add the "actions" property with the new status
         })
           .then(async () => {
@@ -486,7 +477,7 @@ export default function AcceptedScreen() {
                               //flex: 1,
                             }}
                           >
-                            {product.order_size} {product.order_unit}
+                             {product.pro_refillQty} {product.pro_refillUnitVolume}
                           </Text>
                         </View>
 
@@ -660,13 +651,14 @@ export default function AcceptedScreen() {
                             borderRadius: 10,
                             alignItems: "center",
                           },
-                          // Update the disabled property to only disable the button if the order status is not "Delivered"
-                          {
-                            opacity:
-                              item.order_OrderStatus === "Accepted" ||
-                              item.order_OrderStatus === "Out for Delivery" ||
-                              item.order_OrderStatus === "Payment Received" ||
-                            item.orderPaymentMethod === "Gcash"
+                           // Update the disabled property to only disable the button if the order status is not "Delivered"
+                        {
+                          opacity:
+                            item.order_OrderStatus === "Accepted" ||
+                            item.order_OrderStatus === "Out for Delivery" ||
+                            item.order_OrderStatus === "Payment Received" ||
+                            item.orderPaymentMethod === "Gcash" ||
+                            item.orderPaymentMethod === "Points"
                             ? 0.5
                             : 1,
                       },
@@ -678,7 +670,7 @@ export default function AcceptedScreen() {
                       }
                     }}
                     // Update the disabled property to only disable the button if the order status is not "Delivered"
-                    disabled={item.order_OrderStatus !== "Delivered" || item.orderPaymentMethod === "Gcash"}
+                    disabled={item.order_OrderStatus !== "Delivered" || item.orderPaymentMethod === "Gcash" ||  item.orderPaymentMethod === "Points"}
                       >
                         <Text style={styles.buttonText}>Payment Received</Text>
                       </TouchableOpacity>

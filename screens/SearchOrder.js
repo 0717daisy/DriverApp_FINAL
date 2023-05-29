@@ -4,7 +4,7 @@ import {
   TextInput,
   View,
   TouchableOpacity,
-  FlatList,
+  FlatList, Alert
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { FontAwesome5 } from "@expo/vector-icons";
@@ -149,6 +149,7 @@ export default function SearchOrder() {
 
     if (results.length === 0) {
       setSearchResults([]);
+      Alert.alert("No order found");
       console.log("No order found");
       return;
     }
@@ -175,6 +176,7 @@ export default function SearchOrder() {
           />
         </TouchableOpacity>
       </View>
+      
       <FlatList
         keyExtractor={(item) => item.id}
         data={searchResults}

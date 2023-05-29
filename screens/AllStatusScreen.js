@@ -44,7 +44,9 @@ export default function AllStatusScreen() {
 
   const [employeeData, setEmployeeData] = useState();
   const [customerId, setCustomerId] = useState(null);
+
   console.log("Driver:", customerId);
+
 
   const [adminID, setAdminID] = useState("");
   const [customerData, setCustomerData] = useState("");
@@ -145,7 +147,7 @@ export default function AllStatusScreen() {
             }
           });
           setOrderInfo(OrderInformation);
-          console.log("OrderInformation", OrderInformation);
+          //console.log("OrderInformation", OrderInformation);
         } else {
           console.log("No orders found");
         }
@@ -180,15 +182,14 @@ export default function AllStatusScreen() {
       order_OrderStatus: newStatus,
     };
   
-    // Add the appropriate date property based on the new status
     if (newStatus === "Out for Delivery") {
       updates.dateOrderOutforDelivery = currentDate;
     } else if (newStatus === "Delivered") {
       updates.dateOrderDelivered = currentDate;
     } else if (newStatus === "Payment Received") {
       updates.datePaymentReceived = currentDate;
+      updates.paymentReceivedBy = employeeData.emp_firstname + " " +employeeData.emp_lastname;
     }
-  
     update(orderRef, updates)
       .then(() => {
         console.log("Order status updated successfully");
@@ -197,7 +198,6 @@ export default function AllStatusScreen() {
       .catch((error) => {
         console.log("Error updating order status", error);
       });
-  
     const userLogId = Math.floor(Math.random() * 50000) + 100000;
     const newUserLog = userLogId;
     // Read the data from the orderRef reference
@@ -212,15 +212,6 @@ export default function AllStatusScreen() {
           driverId: orderData.driverId,
           admin_ID: orderData.admin_ID,
           cusId: orderData.cusId,
-          order_DeliveryTypeValue: orderData.order_DeliveryTypeValue,
-          order_OrderMethod: orderData.order_OrderMethod,
-          order_OrderTypeValue: orderData.order_OrderTypeValue,
-          order_ProductName: orderData.order_ProductName,
-          order_Quantity: orderData.order_Quantity,
-          order_ReservationDate: orderData.order_ReservationDate,
-          order_StoreName: orderData.order_StoreName,
-          order_TotalAmount: orderData.order_TotalAmount,
-          order_WaterPrice: orderData.order_WaterPrice,
           actions: newStatus, // Add the "actions" property with the new status
         })
           .then(async () => {
@@ -302,7 +293,6 @@ export default function AllStatusScreen() {
       status: "unread",
       title: "Order Status",
     };
-
     // Save new notification object to database
     await set(ref(db, `NOTIFICATION/${newKeys}`), newNotifications);
 
@@ -486,7 +476,7 @@ export default function AllStatusScreen() {
                             //flex: 1,
                           }}
                         >
-                          {product.order_size} {product.order_unit}
+                          {product.pro_refillQty} {product.pro_refillUnitVolume}
                         </Text>
                       </View>
 
@@ -666,7 +656,8 @@ export default function AllStatusScreen() {
                             item.order_OrderStatus === "Accepted" ||
                             item.order_OrderStatus === "Out for Delivery" ||
                             item.order_OrderStatus === "Payment Received" ||
-                            item.orderPaymentMethod === "Gcash"
+                            item.orderPaymentMethod === "Gcash" ||
+                            item.orderPaymentMethod === "Points"
                             ? 0.5
                             : 1,
                       },
@@ -678,7 +669,7 @@ export default function AllStatusScreen() {
                       }
                     }}
                     // Update the disabled property to only disable the button if the order status is not "Delivered"
-                    disabled={item.order_OrderStatus !== "Delivered" || item.orderPaymentMethod === "Gcash"}
+                    disabled={item.order_OrderStatus !== "Delivered" || item.orderPaymentMethod === "Gcash" ||  item.orderPaymentMethod === "Points"}
                     >
                       <Text style={styles.buttonText}>Payment Received</Text>
                     </TouchableOpacity>
@@ -697,7 +688,6 @@ export default function AllStatusScreen() {
     </View>
     );
     }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

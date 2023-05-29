@@ -173,6 +173,7 @@ export default function AccountProfileModule({ navigation }) {
       set(ref(db, `DRIVERSLOG/${newUserLog}`), {
         dateLogout: formattedDate, // Set the logout date and time
         empId: empId, // Set the current logged-in employee ID
+        action:"logout",
       })
         .then(async () => {
           console.log("New:", newUserLog);
@@ -342,6 +343,7 @@ useEffect(() => {
             <CustomInput
               placeholder="First Name"
               value={employeeData.emp_firstname}
+              editable={false}
               onChangeText={(text) =>
                 setEmployeeData({ ...employeeData, emp_firstname: text })
               }
@@ -349,6 +351,7 @@ useEffect(() => {
             <CustomInput
               placeholder="First Name"
               value={employeeData.emp_lastname}
+              editable={false}
               onChangeText={(text) =>
                 setEmployeeData({ ...employeeData, emp_lastname: text })
               }
@@ -356,6 +359,7 @@ useEffect(() => {
             <CustomInput
               placeholder="Contact Number"
               value={employeeData.emp_contactnum}
+              editable={false}
               onChangeText={(text) =>
                 setEmployeeData({ ...employeeData, emp_contactnum: text })
               }

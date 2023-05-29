@@ -92,7 +92,24 @@ export default function MapModule({navigation}) {
             id: key,
             ...data[key],
           }));
-          //console.log("line 90",orderDataInfo)
+          console.log("line 90",orderDataInfo)
+          // const acceptedOrders = orderDataInfo.filter(
+          //   (order) =>
+          //     // order.order_OrderStatus === "Accepted" ||
+          //     // (order.order_OrderStatus === "Out for Delivery" &&
+          //     //   order.order_OrderTypeValue === "Delivery" &&
+          //     //   order.order_OrderTypeValue === "Received Order" &&
+          //     //   order.order_OrderTypeValue === "Payment Received" &&
+          //     //   order.order_OrderStatus !== "Delivered" &&
+          //     //   order.driverId === employeeId)
+          //     (order.order_OrderStatus === "Accepted" ||
+          //     order.order_OrderStatus === "Out for Delivery" ||
+          //     order.order_OrderStatus === "Received Order" ||
+          //     order.order_OrderStatus === "Payment Received") &&
+          //     order.driverId === employeeId
+
+               
+          // );
           const acceptedOrders = orderDataInfo.filter(
             (order) =>
               (order.order_OrderStatus === "Accepted" ||
@@ -101,10 +118,13 @@ export default function MapModule({navigation}) {
                   order.order_OrderStatus === "Received Order" &&
                   order.order_OrderStatus === "Payment Received" &&
                   order.order_OrderStatus !== "Delivered" &&
+
                   order.driverId === employeeId)) &&
               order.order_OrderTypeValue !== "PickUp"
+
           );
-          //   console.log("line 102", acceptedOrders);
+          
+            console.log("line 1121", acceptedOrders);
 
           // Fetch customer information and add to each order object
           acceptedOrders.forEach((order) => {
@@ -134,7 +154,9 @@ export default function MapModule({navigation}) {
 
           //const lastFiltered=acceptedOrders.filter((order)=>order.driverId===employeeId);
 
+
          //console.log("LINE 130", acceptedOrders);
+
           // console.log(
           //   "MAP SCREEN---> ACCEPTED ORDER DATA INFORMATION",
           //   acceptedOrders.length
@@ -171,6 +193,7 @@ export default function MapModule({navigation}) {
 
   const mapRef = useRef(null);
 
+
   //get user's/driver location
   useEffect(() => {
     let subscription;
@@ -178,12 +201,14 @@ export default function MapModule({navigation}) {
     let isMounted = true;
     let previousLocation = null;
   
+
     const getLocation = async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
+      let { status } = await Location.requestBackgroundPermissionsAsync();
       if (status !== "granted") {
         setErrorMsg("Permission to access location was denied");
         return;
       }
+
   
       subscription = await Location.watchPositionAsync(
         { accuracy: Location.Accuracy.Balanced},
@@ -246,7 +271,6 @@ export default function MapModule({navigation}) {
     setpolylineCoordsDriverToCustomer(polylineCoordinates);
     // setSelectedStore(item);
   };
- 
 
   const handleMarkerPress = (place) => {
     setSelectedPlace(place);
@@ -299,6 +323,7 @@ export default function MapModule({navigation}) {
   // }, [employeeId, location,previousLocation]);
 
   // useEffect(() => {
+
   //   const interval = setInterval(() => {
   //     if (!employeeId || !location || !location.coords) {
   //       return;
@@ -332,6 +357,7 @@ export default function MapModule({navigation}) {
   // }, [employeeId, location, previousLocation]);
   
   
+
 
   return (
     <View style={styles.container}>
@@ -367,7 +393,7 @@ export default function MapModule({navigation}) {
           showsIndoorLevelPicker={true}
           toolbarEnabled={true}
         >
-          {markerPosition && (
+          {/* {markerPosition && (
             <Marker
               //  coordinate={{
               //    latitude: location.coords.latitude,
@@ -378,12 +404,26 @@ export default function MapModule({navigation}) {
               title="My Location"
             >
               <FontAwesome name="motorcycle" size={23} color="yellow" />
+
+
             </Marker>
-          )}
+          )} */}
+          <Marker
+            coordinate={{
+              latitude: location.coords.latitude,
+              longitude: location.coords.longitude,
+            }}
+            //coordinate={markerPosition}
+            showCallout={true}
+            title={title}
+          >
+            <FontAwesome name="motorcycle" size={23} color="yellow" />
+          </Marker>
           {orderInformation &&
             orderInformation.length > 0 &&
             orderInformation.map((order) => (
               <Marker
+              
                 key={order.id}
                 coordinate={{
                   latitude: order.customerLatitude,
