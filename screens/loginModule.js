@@ -19,6 +19,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { globalStyles } from "../ForStyle/GlobalStyles";
 import { db } from "../firebaseConfig";
+import { SHA256 } from "crypto-js";
 import {
   ref,
   get,
@@ -71,29 +72,30 @@ export default function LoginModule({ navigation }) {
     functionsetCurrentDate();
   }, []);
 
+
   const handleLogin = () => {
     // Check if already logging in, return early to prevent multiple invocations
     if (isLoggingIn) {
       return;
     }
-  
     // Set isLoggingIn flag to true
     setIsLoggingIn(true);
-  
     const starCountRef = ref(db, "EMPLOYEES/" + empId);
     console.log("starCountRef:", starCountRef);
     onValue(starCountRef, (snapshot) => {
       const data = snapshot.val();
       //console.log("inside", data);
-      if (data && data.emp_pass === empPassword) {
+      const hashedInputPassword = SHA256(empPassword).toString();
+     // console.log("Hashed input password:", hashedInputPassword);
+      //console.log("Stored hashed password:", data.emp_pass);
+      if (data && data.emp_pass=== hashedInputPassword) {
         AsyncStorage.setItem("EMPLOYEE_DATA", JSON.stringify(data));
         setEmployeeData(data);
         navigation.navigate("TabNavigator");
-  
         // Only create new entry in DRIVERSLOG if login is successful
         const userLogId = Math.floor(Math.random() * 50000) + 100000;
         const newUserLog = userLogId;
-  
+
         set(ref(db, `DRIVERSLOG/${newUserLog}`), {
           dateLogin: currentDate,
           empId: empId,
@@ -111,14 +113,17 @@ export default function LoginModule({ navigation }) {
             setIsLoggingIn(false);
           });
       } else {
+
+        console.log("not match");
         alert("Employee not found");
-  
+
+
         // Set isLoggingIn flag to false after completion
         setIsLoggingIn(false);
       }
     });
   };
-  
+
   return (
     <SafeAreaView style={globalStyles.safeviewStyle}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
@@ -141,11 +146,9 @@ export default function LoginModule({ navigation }) {
               <Text style={globalStyles.textStyles}>
                 Meet the expectations.{" "}
               </Text>
-              
-             
 
               <View style={globalStyles.wrapper}>
-              {/* <Image
+                {/* <Image
                 source={require("../assets/line.png")}
                 style={globalStyles.imageStyle1}
               /> */}

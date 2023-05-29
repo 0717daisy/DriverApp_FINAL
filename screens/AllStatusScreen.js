@@ -41,10 +41,13 @@ export default function AllStatusScreen() {
     setShowModal(true);
   };
 
+
   const [employeeData, setEmployeeData] = useState();
   const [customerId, setCustomerId] = useState(null);
- //console.log("Driver2323:", employeeData);
-  const [orderInfo, setOrderInfo] = useState([]);
+
+  console.log("Driver:", customerId);
+
+
   const [adminID, setAdminID] = useState("");
   const [customerData, setCustomerData] = useState("");
   const [currentDate, setCurrentDate] = useState("");
@@ -153,8 +156,8 @@ export default function AllStatusScreen() {
         console.log("Error fetching orders", error);
       }
     );
-  }, [adminID, CustomerInformation]);
-
+  }, [adminID, CustomerInformation,customerId]);
+  const [orderInfo, setOrderInfo] = useState([]);
   useEffect(() => {
     const functionsetCurrentDate = () => {
       const today = new Date();
