@@ -17,7 +17,6 @@ import {
   BackHandler,
 } from "react-native";
 import React, { useEffect, useState } from "react";
-import { SHA256 } from "crypto-js"
 import {
   Ionicons,
   MaterialIcons,

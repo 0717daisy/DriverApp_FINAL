@@ -41,12 +41,10 @@ export default function AllStatusScreen() {
     setShowModal(true);
   };
 
-
   const [employeeData, setEmployeeData] = useState();
   const [customerId, setCustomerId] = useState(null);
 
   console.log("Driver:", customerId);
-
 
   const [adminID, setAdminID] = useState("");
   const [customerData, setCustomerData] = useState("");
@@ -89,6 +87,7 @@ export default function AllStatusScreen() {
   }, []);
 
   const [CustomerInformation, setUserInformation] = useState([]);
+
   useEffect(() => {
     console.log("driver", adminID);
     const orderRef = ref(db, "ORDERS/");
@@ -112,8 +111,8 @@ export default function AllStatusScreen() {
                   order.order_OrderStatus === "Delivered" ||
                   order.order_OrderStatus === "Payment Received") &&
                 order.order_OrderTypeValue === "Delivery" &&
-                 order.driverId === customerId &&
-              order.admin_ID === adminID
+                order.driverId === customerId &&
+                order.admin_ID === adminID
             )
             .sort((a, b) => {
               const dateA = new Date(a.dateOrderAccepted).getTime();
@@ -122,28 +121,30 @@ export default function AllStatusScreen() {
               return dateA - dateB;
             });
           OrderInformation.forEach((order) => {
-            if (
-              order.order_newDeliveryAddressOption === "Same as Home Address"
-            ) {
-              const customer = CustomerInformation.find(
-                (cust) => cust.cusId === order.cusId
-              );
-              if (customer) {
+            const customer = CustomerInformation.find(
+              (cust) => cust.cusId === order.cusId
+            );
+            if (customer) {
+              if (
+                order.order_newDeliveryAddressOption === "Same as Home Address"
+              ) {
                 order.customerLatitude = customer.lattitudeLocation;
                 order.customerLongitude = customer.longitudeLocation;
                 order.customerAddress = customer.address;
                 order.customerPhone = customer.phoneNumber;
                 order.fullName = customer.firstName + " " + customer.lastName;
+              } else if (
+                order.order_newDeliveryAddressOption === "New Delivery Address"
+              ) {
+                order.customerLatitude =
+                  order.order_newDeliveryAddress.latitude;
+                order.customerLongitude =
+                  order.order_newDeliveryAddress.longitude;
+                order.customerAddress = order.order_newDeliveryAddress.address;
+                order.customerPhone =
+                  order.order_newDeliveryAddress.order_newDeliveryAddContactNumber;
+                order.fullName = customer.firstName + " " + customer.lastName;
               }
-            } else if (
-              order.order_newDeliveryAddressOption === "New Delivery Address"
-            ) {
-              order.customerLatitude = order.order_newDeliveryAddress.latitude;
-              order.customerLongitude =
-                order.order_newDeliveryAddress.longitude;
-              order.customerAddress = order.order_newDeliveryAddress.address;
-              order.customerPhone =
-                order.order_newDeliveryAddress.order_newDeliveryAddContactNumber;
             }
           });
           setOrderInfo(OrderInformation);
@@ -156,8 +157,10 @@ export default function AllStatusScreen() {
         console.log("Error fetching orders", error);
       }
     );
-  }, [adminID, CustomerInformation,customerId]);
+  }, [adminID, CustomerInformation, customerId]);
+
   const [orderInfo, setOrderInfo] = useState([]);
+
   useEffect(() => {
     const functionsetCurrentDate = () => {
       const today = new Date();
@@ -176,20 +179,77 @@ export default function AllStatusScreen() {
     functionsetCurrentDate();
   }, []);
 
-  const handleStatusUpdate = (orderId, newStatus) => {
+  const handleStatusUpdate = (orderId, newStatus, order_overAllQuantities) => {
     const orderRef = ref(db, `ORDERS/${orderId}`);
     const updates = {
       order_OrderStatus: newStatus,
     };
-  
+
     if (newStatus === "Out for Delivery") {
       updates.dateOrderOutforDelivery = currentDate;
     } else if (newStatus === "Delivered") {
       updates.dateOrderDelivered = currentDate;
     } else if (newStatus === "Payment Received") {
       updates.datePaymentReceived = currentDate;
-      updates.paymentReceivedBy = employeeData.emp_firstname + " " +employeeData.emp_lastname;
+      updates.paymentReceivedBy =
+        employeeData.emp_firstname + " " + employeeData.emp_lastname;
+
+      // Fetch the order data before creating a new scheduled notification
+      get(orderRef)
+        .then((snapshot) => {
+          const orderData = snapshot.val();
+          if (orderData) {
+            let scheduledSentDays;
+            if (order_overAllQuantities <= 2) {
+              scheduledSentDays = 2;
+            } else if (order_overAllQuantities <= 5) {
+              scheduledSentDays = 4;
+            } else if (order_overAllQuantities <= 8) {
+              scheduledSentDays = 7;
+            } else if (order_overAllQuantities <= 15) {
+              scheduledSentDays = 10;
+            } else {
+              scheduledSentDays = 20;
+            }
+
+            const newScheduledNotification = {
+              notificationID: Math.floor(Math.random() * 1000000),
+              admin_ID: orderData.admin_ID,
+              body: `It's been ${scheduledSentDays} days since your last tubig order! Order again to earn points!`,
+              cusId: orderData.cusId,
+              notificationDate: currentDate,
+              scheduledSent: new Date(
+                Date.now() + scheduledSentDays * 24 * 60 * 60 * 1000
+              ).toISOString(),
+              orderID: orderId,
+              receiver: "Customer",
+              sender: "Admin",
+              status: "unread",
+              title: "Order Reminder",
+            };
+
+            set(
+              ref(
+                db,
+                `NOTIFICATION/${newScheduledNotification.notificationID}`
+              ),
+              newScheduledNotification
+            )
+              .then(() => {
+                console.log("New scheduled notification created successfully");
+              })
+              .catch((error) => {
+                console.log("Error creating scheduled notification", error);
+              });
+          } else {
+            console.log("Order data not found");
+          }
+        })
+        .catch((error) => {
+          console.log("Error reading order data", error);
+        });
     }
+
     update(orderRef, updates)
       .then(() => {
         console.log("Order status updated successfully");
@@ -198,6 +258,7 @@ export default function AllStatusScreen() {
       .catch((error) => {
         console.log("Error updating order status", error);
       });
+
     const userLogId = Math.floor(Math.random() * 50000) + 100000;
     const newUserLog = userLogId;
     // Read the data from the orderRef reference
@@ -318,376 +379,391 @@ export default function AllStatusScreen() {
   return (
     <View style={styles.container}>
       {orderInfo && orderInfo.length > 0 ? (
-      <FlatList
-        keyExtractor={(item) => item.id}
-        data={orderInfo}
-        renderItem={({ item }) => (
-          <View style={styles.productWrapper}>
-            <View style={styles.wrapperWaterProduct}>
-              <View style={styles.viewWaterItem}>
-                <Text style={styles.productNameStyle}>
-                  {item.order_StoreName || "No Store name to display"}
-                </Text>
-                <View style={styles.orderIDWrapper}>
-                  <Text style={styles.orderIDLabel}>Order ID</Text>
-                  <Text style={styles.orderIDValue}>{item.orderID}</Text>
-                </View>
-                <View style={styles.customerIDWrapper}>
-                  <Text style={styles.customerIDLabel}>Customer ID</Text>
-                  <Text style={styles.customerIDValue}>{item.cusId}</Text>
-                </View>
-                <View style={styles.customerIDWrapper}>
-                  <Text style={styles.customerIDLabel}>Customer Name</Text>
-                  <Text style={styles.customerIDValue}>{item.fullName}</Text>
-                </View>
-                <View style={styles.customerIDWrapper}>
-                  <Text style={styles.customerIDLabel}>Phone Number</Text>
-                  <Text style={styles.customerIDValue}>
-                    {item.order_newDeliveryAddressOption ===
-                    "Same as Home Address"
-                      ? item.customerPhone
-                      : item.order_newDeliveryAddressOption ===
-                        "New Delivery Address"
-                      ? `${item.order_newDeliveryAddContactNumber}`
-                      : "No number to display"}
+        <FlatList
+          keyExtractor={(item) => item.id}
+          data={orderInfo}
+          renderItem={({ item }) => (
+            <View style={styles.productWrapper}>
+              <View style={styles.wrapperWaterProduct}>
+                <View style={styles.viewWaterItem}>
+                  <Text style={styles.productNameStyle}>
+                    {item.order_StoreName || "No Store name to display"}
                   </Text>
-                </View>
-                <View style={styles.customerIDWrapper}>
-                  <Text style={styles.customerIDLabel}>Delivery Address</Text>
-                  <Text style={styles.customerIDValue}>
-                    {item.order_newDeliveryAddressOption ===
-                    "Same as Home Address"
-                      ? item.customerAddress
-                      : item.order_newDeliveryAddressOption ===
-                        "New Delivery Address"
-                      ? `${item.order_newDeliveryAddress} (${item.order_newDeliveryAddLandmark})`
-                      : "No delivery address to display"}
-                  </Text>
-                </View>
-                <View style={styles.orderIDWrapper}>
-                  <Text style={styles.customerIDLabel}>Delivery Type</Text>
-                  <Text style={styles.valueStyle}>
-                    {item.order_DeliveryTypeValue}
-                  </Text>
-                </View>
-                <View style={styles.orderIDWrapper}>
-                  <Text style={styles.customerIDLabel}>Reservation Date</Text>
-                  <Text style={styles.valueStyle}>
-                    {item.order_ReservationDate || "-"}
-                  </Text>
-                </View>
-                <View style={styles.orderIDWrapper}>
-                  <Text style={styles.customerIDLabel}>Status</Text>
-                  <Text style={styles.valueStyle}>
-                    {item.order_OrderStatus}
-                  </Text>
-                </View>
-                <View style={styles.orderIDWrapper}>
-                  <Text style={styles.customerIDLabel}>Payment Method</Text>
-                  <Text style={styles.valueStyle}>
-                    {item.orderPaymentMethod}
-                  </Text>
-                </View>
-                {/* Products order by the customer */}
-                {/* <View style={{ marginTop: 5, height: 80 }}> */}
-                <Text
-                  style={{
-                    fontFamily: "nunito-semibold",
-                    fontSize: 15,
-                    //  textAlign: "right",
-                    //flex: 1,
-                  }}
-                >
-                  Order Product(s)
-                </Text>
-
-                <FlatList
-                  showsHorizontalScrollIndicator={false}
-                  horizontal={true}
-                  contentContainerStyle={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                  }}
-                  data={item.order_Products}
-                  nestedScrollEnabled={true}
-                  keyExtractor={(product) => product.order_ProductId.toString()}
-                  renderItem={({ item: product }) => (
-                    <View
-                      style={styles.viewProducts}
-                      key={product.order_ProductId}
-                    >
-                      <View
-                        style={{
-                          //   backgroundColor: "brown",
-                          flexDirection: "row",
-                          //alignItems: "flex-end",
-                        }}
-                      >
-                        <Text
-                          style={{
-                            fontFamily: "bold",
-                            fontSize: 15,
-                            marginTop: 0,
-                          }}
-                        >
-                          Name -
-                        </Text>
-                        <Text
-                          style={{
-                            fontFamily: "bold",
-                            fontSize: 15,
-                            textAlign: "right",
-                            left: 0,
-
-                            flex: 1,
-                            //flex: 1,
-                          }}
-                        >
-                          {product.order_ProductName.length <= 8
-                            ? product.order_ProductName
-                            : product.order_ProductName.substring(0, 15) +
-                              "..."}
-                        </Text>
-                      </View>
-                      {/* size and unit */}
-                      <View
-                        style={{
-                          //   backgroundColor: "brown",
-                          flexDirection: "row",
-                          //alignItems: "flex-end",
-                        }}
-                      >
-                        <Text
-                          style={{
-                            fontFamily: "bold",
-                            fontSize: 15,
-                            marginTop: 0,
-                            textAlign: "right",
-                          }}
-                        >
-                          Size/Unit -
-                        </Text>
-                        <Text
-                          style={{
-                            fontFamily: "bold",
-                            fontSize: 15,
-                            textAlign: "right",
-                            flex: 1,
-                            //flex: 1,
-                          }}
-                        >
-                          {product.pro_refillQty} {product.pro_refillUnitVolume}
-                        </Text>
-                      </View>
-
-                      {/* product price */}
-                      <View
-                        style={{
-                          // backgroundColor: "brown",
-                          flexDirection: "row",
-                          //alignItems: "flex-end",
-                        }}
-                      >
-                        <Text
-                          style={{
-                            fontFamily: "bold",
-                            fontSize: 15,
-                            marginTop: 0,
-                          }}
-                        >
-                          Price -
-                        </Text>
-                        <Text
-                          style={{
-                            fontFamily: "bold",
-                            fontSize: 15,
-                            textAlign: "right",
-                            flex: 1,
-                          }}
-                        >
-                          {product.order_ProductPrice}
-                        </Text>
-                      </View>
-                      <View
-                        style={{
-                          // backgroundColor: "brown",
-                          flexDirection: "row",
-                          //alignItems: "flex-end",
-                        }}
-                      >
-                        <Text
-                          style={{
-                            fontFamily: "bold",
-                            fontSize: 15,
-                            marginTop: 0,
-                          }}
-                        >
-                          Qty -
-                        </Text>
-                        <Text
-                          style={{
-                            fontFamily: "bold",
-                            fontSize: 15,
-                            textAlign: "right",
-                            flex: 1,
-                          }}
-                        >
-                          {product.qtyPerItem}
-                        </Text>
-                      </View>
-                    </View>
-                  )}
-                />
-
-                <View style={styles.orderIDWrapper}>
-                  <Text style={styles.customerIDLabel}>Overall Quantity</Text>
-                  <Text style={styles.valueStyle}>
-                    {item.order_overAllQuantities}
-                  </Text>
-                </View>
-                {/* </View> */}
-                <View
-                  style={{
-                    borderBottomWidth: 0.5,
-                    borderColor: "gray",
-                    marginTop: 10,
-                  }}
-                ></View>
-                <View style={styles.orderIDWrapper}>
-                  <Text style={styles.customerIDLabel2}>Total</Text>
-                  <Text style={styles.valueStyle2}>
-                    {item.order_TotalAmount}
-                  </Text>
-                </View>
-                {/* Start Here */}
-                <View style={{ flexDirection: "row" }}>
-                  <View style={styles.outOrder}>
-                    <TouchableOpacity
-                      style={[
-                        {
-                          backgroundColor: "dodgerblue",
-                          borderRadius: 10,
-                          alignItems: "center",
-                          width: 120,
-                        },
-                        // Add the disabled property to conditionally disable the button
-                        {
-                          opacity:
-                            item.order_OrderStatus === "Out for Delivery" ||
-                            item.order_OrderStatus === "Delivered" ||
-                            item.order_OrderStatus === "Payment Received"
-                              ? 0.5
-                              : 1,
-                        },
-                      ]}
-                      // Add a check to only allow button press if order status is not "Out for Delivery", "Delivered", or "Payment Received"
-                      onPress={() => {
-                        if (
-                          item.order_OrderStatus !== "Out for Delivery" &&
-                          item.order_OrderStatus !== "Delivered" &&
-                          item.order_OrderStatus !== "Payment Received"
-                        ) {
-                          handleStatusUpdate(item.id, "Out for Delivery");
-                        }
-                      }}
-                      // Add a check to only allow button press if order status is not "Out for Delivery", "Delivered", or "Payment Received"
-                      disabled={
-                        item.order_OrderStatus === "Out for Delivery" ||
-                        item.order_OrderStatus === "Delivered" ||
-                        item.order_OrderStatus === "Payment Received"
-                      }
-                    >
-                      <Text style={styles.buttonText}>Out for Delivery</Text>
-                    </TouchableOpacity>
+                  <View style={styles.orderIDWrapper}>
+                    <Text style={styles.orderIDLabel}>Order ID</Text>
+                    <Text style={styles.orderIDValue}>{item.orderID}</Text>
                   </View>
-                  <View style={styles.outOrder1}>
-                    <TouchableOpacity
-                      style={[
-                        {
-                          backgroundColor: "red",
-                          height: 50,
-                          width: 80,
-                          borderRadius: 10,
-                          alignItems: "center",
-                        },
-                        // Add the disabled property to conditionally disable the button
-                        {
-                          opacity:
-                            item.order_OrderStatus === "Accepted" ||
-                            item.order_OrderStatus === "Delivered" ||
-                            item.order_OrderStatus === "Payment Received"
-                              ? 0.5
-                              : 1,
-                        },
-                      ]}
-                      // Add a check to only allow button press if order status is not "Accepted", "Delivered", or "Payment Received"
-                      onPress={() => {
-                        if (
-                          item.order_OrderStatus !== "Accepted" &&
-                          item.order_OrderStatus !== "Delivered" &&
-                          item.order_OrderStatus !== "Payment Received"
-                        ) {
-                          handleStatusUpdate(item.id, "Delivered");
-                        }
-                      }}
-                      // Add a check to only allow button press if order status is not "Accepted", "Delivered", or "Payment Received"
-                      disabled={
-                        item.order_OrderStatus === "Accepted" ||
-                        item.order_OrderStatus === "Delivered" ||
-                        item.order_OrderStatus === "Payment Received"
-                      }
-                    >
-                      <Text style={styles.buttonText}>Delivered</Text>
-                    </TouchableOpacity>
+                  <View style={styles.customerIDWrapper}>
+                    <Text style={styles.customerIDLabel}>Customer ID</Text>
+                    <Text style={styles.customerIDValue}>{item.cusId}</Text>
                   </View>
-                  <View style={styles.outOrder1}>
-                    <TouchableOpacity
-                      style={[
-                        {
-                          backgroundColor: "green",
-                          height: 50,
-                          width: 80,
-                          borderRadius: 10,
-                          alignItems: "center",
-                        },
-                        // Update the disabled property to only disable the button if the order status is not "Delivered"
-                        {
-                          opacity:
-                            item.order_OrderStatus === "Accepted" ||
-                            item.order_OrderStatus === "Out for Delivery" ||
-                            item.order_OrderStatus === "Payment Received" ||
-                            item.orderPaymentMethod === "Gcash" ||
-                            item.orderPaymentMethod === "Points"
-                            ? 0.5
-                            : 1,
-                      },
-                    ]}
-                    // Update the onPress function to only allow button press if order status is "Delivered"
-                    onPress={() => {
-                      if (item.order_OrderStatus === "Delivered") {
-                        handleStatusUpdate(item.id, "Payment Received");
-                      }
+                  <View style={styles.customerIDWrapper}>
+                    <Text style={styles.customerIDLabel}>Customer Name</Text>
+                    <Text style={styles.customerIDValue}>{item.fullName}</Text>
+                  </View>
+                  <View style={styles.customerIDWrapper}>
+                    <Text style={styles.customerIDLabel}>Phone Number</Text>
+                    <Text style={styles.customerIDValue}>
+                      {item.order_newDeliveryAddressOption ===
+                      "Same as Home Address"
+                        ? item.customerPhone
+                        : item.order_newDeliveryAddressOption ===
+                          "New Delivery Address"
+                        ? `${item.order_newDeliveryAddContactNumber}`
+                        : "No number to display"}
+                    </Text>
+                  </View>
+                  <View style={styles.customerIDWrapper}>
+                    <Text style={styles.customerIDLabel}>Delivery Address</Text>
+                    <Text style={styles.customerIDValue}>
+                      {item.order_newDeliveryAddressOption ===
+                      "Same as Home Address"
+                        ? item.customerAddress
+                        : item.order_newDeliveryAddressOption ===
+                          "New Delivery Address"
+                        ? `${item.order_newDeliveryAddress} (${item.order_newDeliveryAddLandmark})`
+                        : "No delivery address to display"}
+                    </Text>
+                  </View>
+                  <View style={styles.orderIDWrapper}>
+                    <Text style={styles.customerIDLabel}>Delivery Type</Text>
+                    <Text style={styles.valueStyle}>
+                      {item.order_DeliveryTypeValue}
+                    </Text>
+                  </View>
+                  <View style={styles.orderIDWrapper}>
+                    <Text style={styles.customerIDLabel}>Reservation Date</Text>
+                    <Text style={styles.valueStyle}>
+                      {item.order_ReservationDate || "-"}
+                    </Text>
+                  </View>
+                  <View style={styles.orderIDWrapper}>
+                    <Text style={styles.customerIDLabel}>Status</Text>
+                    <Text style={styles.valueStyle}>
+                      {item.order_OrderStatus}
+                    </Text>
+                  </View>
+                  <View style={styles.orderIDWrapper}>
+                    <Text style={styles.customerIDLabel}>Payment Method</Text>
+                    <Text style={styles.valueStyle}>
+                      {item.orderPaymentMethod}
+                    </Text>
+                  </View>
+                  {/* Products order by the customer */}
+                  {/* <View style={{ marginTop: 5, height: 80 }}> */}
+                  <Text
+                    style={{
+                      fontFamily: "nunito-semibold",
+                      fontSize: 15,
+                      //  textAlign: "right",
+                      //flex: 1,
                     }}
-                    // Update the disabled property to only disable the button if the order status is not "Delivered"
-                    disabled={item.order_OrderStatus !== "Delivered" || item.orderPaymentMethod === "Gcash" ||  item.orderPaymentMethod === "Points"}
-                    >
-                      <Text style={styles.buttonText}>Payment Received</Text>
-                    </TouchableOpacity>
+                  >
+                    Order Product(s)
+                  </Text>
+
+                  <FlatList
+                    showsHorizontalScrollIndicator={false}
+                    horizontal={true}
+                    contentContainerStyle={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                    }}
+                    data={item.order_Products}
+                    nestedScrollEnabled={true}
+                    keyExtractor={(product) =>
+                      product.order_ProductId.toString()
+                    }
+                    renderItem={({ item: product }) => (
+                      <View
+                        style={styles.viewProducts}
+                        key={product.order_ProductId}
+                      >
+                        <View
+                          style={{
+                            //   backgroundColor: "brown",
+                            flexDirection: "row",
+                            //alignItems: "flex-end",
+                          }}
+                        >
+                          <Text
+                            style={{
+                              fontFamily: "bold",
+                              fontSize: 15,
+                              marginTop: 0,
+                            }}
+                          >
+                            Name -
+                          </Text>
+                          <Text
+                            style={{
+                              fontFamily: "bold",
+                              fontSize: 15,
+                              textAlign: "right",
+                              left: 0,
+
+                              flex: 1,
+                              //flex: 1,
+                            }}
+                          >
+                            {product.order_ProductName.length <= 8
+                              ? product.order_ProductName
+                              : product.order_ProductName.substring(0, 15) +
+                                "..."}
+                          </Text>
+                        </View>
+                        {/* size and unit */}
+                        <View
+                          style={{
+                            //   backgroundColor: "brown",
+                            flexDirection: "row",
+                            //alignItems: "flex-end",
+                          }}
+                        >
+                          <Text
+                            style={{
+                              fontFamily: "bold",
+                              fontSize: 15,
+                              marginTop: 0,
+                              textAlign: "right",
+                            }}
+                          >
+                            Size/Unit -
+                          </Text>
+                          <Text
+                            style={{
+                              fontFamily: "bold",
+                              fontSize: 15,
+                              textAlign: "right",
+                              flex: 1,
+                              //flex: 1,
+                            }}
+                          >
+                            {product.pro_refillQty}{" "}
+                            {product.pro_refillUnitVolume}
+                          </Text>
+                        </View>
+
+                        {/* product price */}
+                        <View
+                          style={{
+                            // backgroundColor: "brown",
+                            flexDirection: "row",
+                            //alignItems: "flex-end",
+                          }}
+                        >
+                          <Text
+                            style={{
+                              fontFamily: "bold",
+                              fontSize: 15,
+                              marginTop: 0,
+                            }}
+                          >
+                            Price -
+                          </Text>
+                          <Text
+                            style={{
+                              fontFamily: "bold",
+                              fontSize: 15,
+                              textAlign: "right",
+                              flex: 1,
+                            }}
+                          >
+                            {product.order_ProductPrice}
+                          </Text>
+                        </View>
+                        <View
+                          style={{
+                            // backgroundColor: "brown",
+                            flexDirection: "row",
+                            //alignItems: "flex-end",
+                          }}
+                        >
+                          <Text
+                            style={{
+                              fontFamily: "bold",
+                              fontSize: 15,
+                              marginTop: 0,
+                            }}
+                          >
+                            Qty -
+                          </Text>
+                          <Text
+                            style={{
+                              fontFamily: "bold",
+                              fontSize: 15,
+                              textAlign: "right",
+                              flex: 1,
+                            }}
+                          >
+                            {product.qtyPerItem}
+                          </Text>
+                        </View>
+                      </View>
+                    )}
+                  />
+
+                  <View style={styles.orderIDWrapper}>
+                    <Text style={styles.customerIDLabel}>Overall Quantity</Text>
+                    <Text style={styles.valueStyle}>
+                      {item.order_overAllQuantities}
+                    </Text>
+                  </View>
+                  {/* </View> */}
+                  <View
+                    style={{
+                      borderBottomWidth: 0.5,
+                      borderColor: "gray",
+                      marginTop: 10,
+                    }}
+                  ></View>
+                  <View style={styles.orderIDWrapper}>
+                    <Text style={styles.customerIDLabel2}>Total</Text>
+                    <Text style={styles.valueStyle2}>
+                      {item.order_TotalAmount}
+                    </Text>
+                  </View>
+                  {/* Start Here */}
+                  <View style={{ flexDirection: "row" }}>
+                    <View style={styles.outOrder}>
+                      <TouchableOpacity
+                        style={[
+                          {
+                            backgroundColor: "dodgerblue",
+                            borderRadius: 10,
+                            alignItems: "center",
+                            width: 120,
+                          },
+                          // Add the disabled property to conditionally disable the button
+                          {
+                            opacity:
+                              item.order_OrderStatus === "Out for Delivery" ||
+                              item.order_OrderStatus === "Delivered" ||
+                              item.order_OrderStatus === "Payment Received"
+                                ? 0.5
+                                : 1,
+                          },
+                        ]}
+                        // Add a check to only allow button press if order status is not "Out for Delivery", "Delivered", or "Payment Received"
+                        onPress={() => {
+                          if (
+                            item.order_OrderStatus !== "Out for Delivery" &&
+                            item.order_OrderStatus !== "Delivered" &&
+                            item.order_OrderStatus !== "Payment Received"
+                          ) {
+                            handleStatusUpdate(item.id, "Out for Delivery");
+                          }
+                        }}
+                        // Add a check to only allow button press if order status is not "Out for Delivery", "Delivered", or "Payment Received"
+                        disabled={
+                          item.order_OrderStatus === "Out for Delivery" ||
+                          item.order_OrderStatus === "Delivered" ||
+                          item.order_OrderStatus === "Payment Received"
+                        }
+                      >
+                        <Text style={styles.buttonText}>Out for Delivery</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <View style={styles.outOrder1}>
+                      <TouchableOpacity
+                        style={[
+                          {
+                            backgroundColor: "red",
+                            height: 50,
+                            width: 80,
+                            borderRadius: 10,
+                            alignItems: "center",
+                          },
+                          // Add the disabled property to conditionally disable the button
+                          {
+                            opacity:
+                              item.order_OrderStatus === "Accepted" ||
+                              item.order_OrderStatus === "Delivered" ||
+                              item.order_OrderStatus === "Payment Received"
+                                ? 0.5
+                                : 1,
+                          },
+                        ]}
+                        // Add a check to only allow button press if order status is not "Accepted", "Delivered", or "Payment Received"
+                        onPress={() => {
+                          if (
+                            item.order_OrderStatus !== "Accepted" &&
+                            item.order_OrderStatus !== "Delivered" &&
+                            item.order_OrderStatus !== "Payment Received"
+                          ) {
+                            handleStatusUpdate(item.id, "Delivered");
+                          }
+                        }}
+                        // Add a check to only allow button press if order status is not "Accepted", "Delivered", or "Payment Received"
+                        disabled={
+                          item.order_OrderStatus === "Accepted" ||
+                          item.order_OrderStatus === "Delivered" ||
+                          item.order_OrderStatus === "Payment Received"
+                        }
+                      >
+                        <Text style={styles.buttonText}>Delivered</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <View style={styles.outOrder1}>
+                      <TouchableOpacity
+                        style={[
+                          {
+                            backgroundColor: "green",
+                            height: 50,
+                            width: 80,
+                            borderRadius: 10,
+                            alignItems: "center",
+                          },
+                          // Update the disabled property to only disable the button if the order status is not "Delivered"
+                          {
+                            opacity:
+                              item.order_OrderStatus === "Accepted" ||
+                              item.order_OrderStatus === "Out for Delivery" ||
+                              item.order_OrderStatus === "Payment Received" ||
+                              item.orderPaymentMethod === "Gcash" ||
+                              item.orderPaymentMethod === "Points"
+                                ? 0.5
+                                : 1,
+                          },
+                        ]}
+                        // Update the onPress function to only allow button press if order status is "Delivered"
+                        onPress={() => {
+                          if (item.order_OrderStatus === "Delivered") {
+                            handleStatusUpdate(
+                              item.id,
+                              "Payment Received",
+                              item.order_overAllQuantities
+                            );
+                          }
+                        }}
+                        // Update the disabled property to only disable the button if the order status is not "Delivered"
+                        disabled={
+                          item.order_OrderStatus !== "Delivered" ||
+                          item.orderPaymentMethod === "Gcash" ||
+                          item.orderPaymentMethod === "Points"
+                        }
+                      >
+                        <Text style={styles.buttonText}>Payment Received</Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 </View>
               </View>
             </View>
-          </View>
-        )}
-      />
+          )}
+        />
       ) : (
-        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <Text style={{fontWeight:'bold', fontSize: 20}}>No Order Assigned</Text>
+        <View
+          style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+        >
+          <Text style={{ fontWeight: "bold", fontSize: 20 }}>
+            No Order Assigned
+          </Text>
         </View>
       )}
     </View>
-    );
-    }
+  );
+}
 const styles = StyleSheet.create({
   container: {
     flex: 1,

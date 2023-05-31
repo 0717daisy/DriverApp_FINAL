@@ -28,8 +28,8 @@ export default function SearchOrder() {
   const [employeeData, setEmployeeData] = useState();
   const [customerId, setCustomerId] = useState(null);
   const [adminID, setAdminID] = useState("");
-  const [orderInfo, setOrderInfo] = useState([]);
-  const [searchResults, setSearchResults] = useState([]);
+ 
+  
 
   //get the customer ID from Async in login screen and extract it and Save to customerID
   useEffect(() => {
@@ -99,32 +99,34 @@ export default function SearchOrder() {
               console.log("date", dateA);
               return dateA - dateB;
             });
-          OrderInformation.forEach((order) => {
-            if (
-              order.order_newDeliveryAddressOption === "Same as Home Address"
-            ) {
+            OrderInformation.forEach((order) => {
               const customer = CustomerInformation.find(
                 (cust) => cust.cusId === order.cusId
               );
               if (customer) {
-                order.customerLatitude = customer.lattitudeLocation;
-                order.customerLongitude = customer.longitudeLocation;
-                order.customerAddress = customer.address;
-                order.customerPhone = customer.phoneNumber;
-                order.fullName = customer.firstName + " " + customer.lastName;
+                if (
+                  order.order_newDeliveryAddressOption === "Same as Home Address"
+                ) {
+                  order.customerLatitude = customer.lattitudeLocation;
+                  order.customerLongitude = customer.longitudeLocation;
+                  order.customerAddress = customer.address;
+                  order.customerPhone = customer.phoneNumber;
+                  order.fullName = customer.firstName + " " + customer.lastName;
+                } else if (
+                  order.order_newDeliveryAddressOption === "New Delivery Address"
+                ) {
+                  order.customerLatitude =
+                    order.order_newDeliveryAddress.latitude;
+                  order.customerLongitude =
+                    order.order_newDeliveryAddress.longitude;
+                  order.customerAddress = order.order_newDeliveryAddress.address;
+                  order.customerPhone =
+                    order.order_newDeliveryAddress.order_newDeliveryAddContactNumber;
+                  order.fullName = customer.firstName + " " + customer.lastName;
+                }
               }
-            } else if (
-              order.order_newDeliveryAddressOption === "New Delivery Address"
-            ) {
-              order.customerLatitude = order.order_newDeliveryAddress.latitude;
-              order.customerLongitude =
-                order.order_newDeliveryAddress.longitude;
-              order.customerAddress = order.order_newDeliveryAddress.address;
-              order.customerPhone =
-                order.order_newDeliveryAddress.order_newDeliveryAddContactNumber;
-            }
-          });
-          setOrderInfo(OrderInformation);
+            });
+            setOrderInfo(OrderInformation);
           console.log("OrderInformation", OrderInformation);
         } else {
           console.log("No orders found");
@@ -135,6 +137,8 @@ export default function SearchOrder() {
       }
     );
   }, [adminID, CustomerInformation]);
+
+  const [orderInfo, setOrderInfo] = useState([]);
 
   const handleSearch = () => {
     if (!searchedOrderId || searchedOrderId.trim() === "") {
@@ -157,6 +161,8 @@ export default function SearchOrder() {
     setSearchResults(results);
     console.log("Results:", results);
   };
+  const [searchResults, setSearchResults] = useState([]);
+
   return (
     <View style={styles.container}>
       <TextInput
@@ -322,19 +328,20 @@ export default function SearchOrder() {
                           }}
                         >
                           Size/Unit -
-                        </Text>
-                        <Text
-                          style={{
-                            fontFamily: "bold",
-                            fontSize: 15,
-                            textAlign: "right",
-                            flex: 1,
-                            //flex: 1,
-                          }}
-                        >
-                          {product.order_size} {product.order_unit}
-                        </Text>
-                      </View>
+                          </Text>
+                          <Text
+                            style={{
+                              fontFamily: "bold",
+                              fontSize: 15,
+                              textAlign: "right",
+                              flex: 1,
+                              //flex: 1,
+                            }}
+                          >
+                            {product.pro_refillQty}{" "}
+                            {product.pro_refillUnitVolume}
+                          </Text>
+                        </View>
 
                       {/* product price */}
                       <View
@@ -394,9 +401,8 @@ export default function SearchOrder() {
                     </View>
                   )}
                 />
-
                 <View style={styles.orderIDWrapper}>
-                  <Text style={styles.customerIDLabel}>Overall Quantity</Text>
+                  <Text style={styles.customerIDLabel11}>Overall Quantity</Text>
                   <Text style={styles.valueStyle}>
                     {item.order_overAllQuantities}
                   </Text>
@@ -496,7 +502,6 @@ const styles = StyleSheet.create({
     height: 600,
     marginBottom: -15,
   },
-
   viewWaterItem: {
     backgroundColor: "#F8E2CF",
     padding: 3,
@@ -541,6 +546,10 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   customerIDLabel: {
+    fontFamily: "nunito-semibold",
+    fontSize: 15,
+  },
+  customerIDLabel11: {
     fontFamily: "nunito-semibold",
     fontSize: 15,
   },
@@ -630,7 +639,7 @@ const styles = StyleSheet.create({
   viewProducts: {
     backgroundColor: "white",
     padding: 3,
-    marginBottom: 0,
+    marginBottom: 80,
     width: 190,
     height: 90,
     //marginLeft: 5,
