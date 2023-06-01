@@ -88,6 +88,7 @@ export default function AllStatusScreen() {
   }, []);
 
   const [CustomerInformation, setUserInformation] = useState([]);
+
   useEffect(() => {
     console.log("driver", adminID);
     const orderRef = ref(db, "ORDERS/");
@@ -123,32 +124,32 @@ export default function AllStatusScreen() {
           OrderInformation.forEach((order) => {
             const customer = CustomerInformation.find(
               (cust) => cust.cusId === order.cusId
-            ); //mo adto as CustomerInformation, mo traverse or e find ang cusId sa CustomerInformation nga mo equal saorder.cusId 
-            if (customer)//check if makit-an, if truly, then execute the IF codes
-             {
+
+            );
+            if (customer) {
               if (
                 order.order_newDeliveryAddressOption === "Same as Home Address"
-              ) 
-              {
+              ) {
+
                 order.customerLatitude = customer.lattitudeLocation;
                 order.customerLongitude = customer.longitudeLocation;
                 order.customerAddress = customer.address;
                 order.customerPhone = customer.phoneNumber;
                 order.fullName = customer.firstName + " " + customer.lastName;
 
-              } else {
-                //new delivery address
-                order.customerLatitude = order.order_newDeliveryAddress.latitude;
+              } else if (
+                order.order_newDeliveryAddressOption === "New Delivery Address"
+              ) {
+                order.customerLatitude =
+                  order.order_newDeliveryAddress.latitude;
                 order.customerLongitude =
                   order.order_newDeliveryAddress.longitude;
                 order.customerAddress = order.order_newDeliveryAddress.address;
                 order.customerPhone =
                   order.order_newDeliveryAddress.order_newDeliveryAddContactNumber;
-                  order.fullName = customer.firstName + " " + customer.lastName;
+
+                order.fullName = customer.firstName + " " + customer.lastName;
               }
-            }
-            else{
-              console.log("No customer found");
 
             }
           });
@@ -163,7 +164,9 @@ export default function AllStatusScreen() {
       }
     );
   }, [adminID, CustomerInformation, customerId]);
+
   const [orderInfo, setOrderInfo] = useState([]);
+
   useEffect(() => {
     const functionsetCurrentDate = () => {
       const today = new Date();
@@ -182,7 +185,7 @@ export default function AllStatusScreen() {
     functionsetCurrentDate();
   }, []);
 
-  const handleStatusUpdate = (orderId, newStatus) => {
+  const handleStatusUpdate = (orderId, newStatus, order_overAllQuantities) => {
     const orderRef = ref(db, `ORDERS/${orderId}`);
     const updates = {
       order_OrderStatus: newStatus,
@@ -196,7 +199,65 @@ export default function AllStatusScreen() {
       updates.datePaymentReceived = currentDate;
       updates.paymentReceivedBy =
         employeeData.emp_firstname + " " + employeeData.emp_lastname;
+
+
+      // Fetch the order data before creating a new scheduled notification
+      get(orderRef)
+        .then((snapshot) => {
+          const orderData = snapshot.val();
+          if (orderData) {
+            let scheduledSentDays;
+            if (order_overAllQuantities <= 2) {
+              scheduledSentDays = 2;
+            } else if (order_overAllQuantities <= 5) {
+              scheduledSentDays = 4;
+            } else if (order_overAllQuantities <= 8) {
+              scheduledSentDays = 7;
+            } else if (order_overAllQuantities <= 15) {
+              scheduledSentDays = 10;
+            } else {
+              scheduledSentDays = 20;
+            }
+
+            const newScheduledNotification = {
+              notificationID: Math.floor(Math.random() * 1000000),
+              admin_ID: orderData.admin_ID,
+              body: `It's been ${scheduledSentDays} days since your last tubig order! Order again to earn points!`,
+              cusId: orderData.cusId,
+              notificationDate: currentDate,
+              scheduledSent: new Date(
+                Date.now() + scheduledSentDays * 24 * 60 * 60 * 1000
+              ).toISOString(),
+              orderID: orderId,
+              receiver: "Customer",
+              sender: "Admin",
+              status: "unread",
+              title: "Order Reminder",
+            };
+
+            set(
+              ref(
+                db,
+                `NOTIFICATION/${newScheduledNotification.notificationID}`
+              ),
+              newScheduledNotification
+            )
+              .then(() => {
+                console.log("New scheduled notification created successfully");
+              })
+              .catch((error) => {
+                console.log("Error creating scheduled notification", error);
+              });
+          } else {
+            console.log("Order data not found");
+          }
+        })
+        .catch((error) => {
+          console.log("Error reading order data", error);
+        });
+
     }
+
     update(orderRef, updates)
       .then(() => {
         console.log("Order status updated successfully");
@@ -205,6 +266,7 @@ export default function AllStatusScreen() {
       .catch((error) => {
         console.log("Error updating order status", error);
       });
+
     const userLogId = Math.floor(Math.random() * 50000) + 100000;
     const newUserLog = userLogId;
     // Read the data from the orderRef reference
@@ -675,7 +737,13 @@ export default function AllStatusScreen() {
                         // Update the onPress function to only allow button press if order status is "Delivered"
                         onPress={() => {
                           if (item.order_OrderStatus === "Delivered") {
-                            handleStatusUpdate(item.id, "Payment Received");
+
+                            handleStatusUpdate(
+                              item.id,
+                              "Payment Received",
+                              item.order_overAllQuantities
+                            );
+
                           }
                         }}
                         // Update the disabled property to only disable the button if the order status is not "Delivered"
