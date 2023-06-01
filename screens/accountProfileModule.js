@@ -30,6 +30,7 @@ import { ref, update, set,onValue} from "firebase/database";
 import { firebase } from "../firebaseStorage";
 import * as ImagePicker from "expo-image-picker";
 import { db, auth } from "../firebaseConfig";
+import { SHA256 } from 'crypto-js';
 
 export default function AccountProfileModule({ navigation }) {
   const [text, onChangeText] = React.useState("");
