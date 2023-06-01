@@ -74,59 +74,102 @@ export default function LoginModule({ navigation }) {
     functionsetCurrentDate();
   }, []);
 
-
-  const handleLogin = () => {
-    // Check if already logging in, return early to prevent multiple invocations
-    if (isLoggingIn) {
-      return;
-    }
-    // Set isLoggingIn flag to true
-    setIsLoggingIn(true);
+  const handleLogin = async () => {
     const starCountRef = ref(db, "EMPLOYEES/" + empId);
     console.log("starCountRef:", starCountRef);
-    onValue(starCountRef, (snapshot) => {
+  
+    try {
+      const snapshot = await get(starCountRef);
       const data = snapshot.val();
 
-      //console.log("inside", data);
       const hashedInputPassword = SHA256(empPassword).toString();
-     // console.log("Hashed input password:", hashedInputPassword);
-      //console.log("Stored hashed password:", data.emp_pass);
-      if (data && data.emp_pass=== hashedInputPassword) {
+      console.log("Hashed input password:", hashedInputPassword);
+      console.log("Stored hashed password:", data.emp_pass);
+  
+      if (data && data.emp_pass === hashedInputPassword) {
 
         AsyncStorage.setItem("EMPLOYEE_DATA", JSON.stringify(data));
         setEmployeeData(data);
         navigation.navigate("TabNavigator");
+
         // Only create new entry in DRIVERSLOG if login is successful
         const userLogId = Math.floor(Math.random() * 50000) + 100000;
         const newUserLog = userLogId;
-
         set(ref(db, `DRIVERSLOG/${newUserLog}`), {
-          dateLogin: currentDate,
-          empId: empId,
-          action: "login",
-        })
-          .then(async () => {
-            console.log("New:", newUserLog);
-          })
-          .catch((error) => {
-            console.log("Errroorrrr:", error);
-            Alert();
-          })
-          .finally(() => {
-            // Set isLoggingIn flag to false after completion
-            setIsLoggingIn(false);
-          });
+                  dateLogin: currentDate,
+                  empId: empId,
+                  action: "login",
+                })
+                  .then(async () => {
+                    console.log("New:", newUserLog);
+                  })
+                  .catch((error) => {
+                    console.log("Error:", error);
+                  });
       } else {
-
-        console.log("not match");
-        alert("Employee not found");
-
-
-        // Set isLoggingIn flag to false after completion
-        setIsLoggingIn(false);
+        console.log("Password does not match");
+        alert("Incorrect password");
       }
-    });
+    } catch (error) {
+      console.log("Error retrieving data from Firebase:", error);
+      alert("An error occurred. Please try again later.");
+    }
   };
+  
+  // const handleLogin = () => {
+  //   const starCountRef = ref(db, "EMPLOYEES/" + empId);
+  //   console.log("starCountRef:", starCountRef);
+  //   onValue(starCountRef,(snapshot)=>{
+  //     const data = snapshot.val();
+  //     const hashedInputPassword = SHA256(empPassword).toString();
+  //       console.log("Hashed input password:", hashedInputPassword);
+  //       console.log("Stored hashed password:", data.emp_pass);
+  //       if(data){
+  //         if(data.emp_pass === hashedInputPassword){
+  //           AsyncStorage.setItem("EMPLOYEE_DATA", JSON.stringify(data));
+  //               setEmployeeData(data);
+  //               navigation.navigate("TabNavigator");
+  //         }
+  //         else{
+  //           Alert.alert("Warning","No employee found.")
+  //         }
+  //       }
+  //       else{
+  //         console.log("No data found");
+  //       }
+  //   })
+
+  //   // onValue(starCountRef, (snapshot) => {
+  //   //   const data = snapshot.val();
+  //   //   //console.log("inside", data);
+  //   //   const hashedInputPassword = SHA256(empPassword).toString();
+  //   //   //console.log("Hashed input password:", hashedInputPassword);
+  //   //   //console.log("Stored hashed password:", data.emp_pass);
+  //   //   if (data && data.emp_pass === hashedInputPassword) {
+  //   //     AsyncStorage.setItem("EMPLOYEE_DATA", JSON.stringify(data));
+  //   //     setEmployeeData(data);
+  //   //     navigation.navigate("TabNavigator");
+  //   //     // Only create new entry in DRIVERSLOG if login is successful
+  //   //     const userLogId = Math.floor(Math.random() * 50000) + 100000;
+  //   //     const newUserLog = userLogId;
+
+  //   //     set(ref(db, `DRIVERSLOG/${newUserLog}`), {
+  //   //       dateLogin: currentDate,
+  //   //       empId: empId,
+  //   //       action: "login",
+  //   //     })
+  //   //       .then(async () => {
+  //   //         console.log("New:", newUserLog);
+  //   //       })
+  //   //       .catch((error) => {
+  //   //         console.log("Error:", error);
+  //   //       });
+  //   //   } else {
+  //   //     console.log("not match");
+  //   //     Alert.alert("Warning","Incorrect employee ID or password");
+  //   //   }
+  //   // });
+  // };
 
   return (
     <SafeAreaView style={globalStyles.safeviewStyle}>
