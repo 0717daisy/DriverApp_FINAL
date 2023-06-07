@@ -29,7 +29,7 @@ export default function NotificationScreen() {
   const [currentTime, setCurrentTime] = useState(new Date());
 
   //const { unreadCount, setUnreadCount } = useContext(NotificationContext);
-  const { unreadCount, updateUnreadCount } = useContext(NotificationContext);
+ 
 
   const navigation = useNavigation();
   //const { unreadCount } = useContext(NotificationContext);
@@ -86,6 +86,7 @@ export default function NotificationScreen() {
 
     return () => clearInterval(intervalId);
   }, []);
+
 
   const handleNotificationPress = async (notification) => {
     if (notification.status === "unread") {
@@ -161,6 +162,7 @@ export default function NotificationScreen() {
     }
   };
 
+  const { unreadCount, updateUnreadCount } = useContext(NotificationContext);
   const handleDeleteNotification = (notificationID) => {
     setNotifications(
       notifications.filter(

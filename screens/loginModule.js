@@ -39,8 +39,8 @@ export default function LoginModule({ navigation }) {
   const [empId, setEmpId] = useState("");
   console.log(empId);
   const [empPassword, setEmpPassword] = useState("");
-  console.log(empPassword);
   const [employeeData, setEmployeeData] = useState(null);
+  console.log("employeeData:",employeeData);
   const [showPassword, setShowPassword] = useState(false);
   const [visible, setVisible] = useState(true);
   const [currentDate, setCurrentDate] = useState("");
@@ -74,50 +74,114 @@ export default function LoginModule({ navigation }) {
     functionsetCurrentDate();
   }, []);
 
-  const handleLogin = async () => {
+
+  // const handleLogin = () => {
+  //   // Check if already logging in, return early to prevent multiple invocations
+  //   if (isLoggingIn) {
+  //     return;
+  //   }
+  //   // Set isLoggingIn flag to true
+  //   setIsLoggingIn(true);
+  //   const starCountRef = ref(db, "EMPLOYEES/" + empId);
+  //   console.log("starCountRef:", starCountRef);
+  //   onValue(starCountRef, (snapshot) => {
+  //     const data = snapshot.val();
+
+  //     //console.log("inside", data);
+  //     const hashedInputPassword = SHA256(empPassword).toString();
+  //    // console.log("Hashed input password:", hashedInputPassword);
+  //     //console.log("Stored hashed password:", data.emp_pass);
+  //     if (data && data.emp_pass=== hashedInputPassword) {
+
+  //       AsyncStorage.setItem("EMPLOYEE_DATA", JSON.stringify(data));
+  //       setEmployeeData(data);
+  //       navigation.navigate("TabNavigator");
+  //       // Only create new entry in DRIVERSLOG if login is successful
+  //       const userLogId = Math.floor(Math.random() * 50000) + 100000;
+  //       const newUserLog = userLogId;
+  //       const driverName = data.emp_firstname + " " + data.emp_lastname;
+  //       set(ref(db, `DRIVERSLOG/${newUserLog}`), {
+  //         date: currentDate,
+  //         driverName:  driverName,
+  //         actions: "login",
+  //       })
+  //         .then(async () => {
+  //           console.log("New:", newUserLog);
+  //         })
+  //         .catch((error) => {
+  //           console.log("Errroorrrr:", error);
+  //           Alert();
+  //         })
+  //         .finally(() => {
+  //           // Set isLoggingIn flag to false after completion
+  //           setIsLoggingIn(false);
+  //         });
+  //     } else {
+
+  //       console.log("not match");
+  //      alert("Employee not found");
+
+  //       // Set isLoggingIn flag to false after completion
+  //       setIsLoggingIn(false);
+  //     }
+  //   });
+  // };
+
+  const handleLogin = () => {
+    // Check if already logging in, return early to prevent multiple invocations
+    if (isLoggingIn) {
+      return;
+    }
+    // Set isLoggingIn flag to true
+    setIsLoggingIn(true);
     const starCountRef = ref(db, "EMPLOYEES/" + empId);
     console.log("starCountRef:", starCountRef);
-  
-    try {
-      const snapshot = await get(starCountRef);
+    onValue(starCountRef, (snapshot) => {
       const data = snapshot.val();
 
+      //console.log("inside", data);
       const hashedInputPassword = SHA256(empPassword).toString();
-      console.log("Hashed input password:", hashedInputPassword);
-      console.log("Stored hashed password:", data.emp_pass);
-  
+      // console.log("Hashed input password:", hashedInputPassword);
+      //console.log("Stored hashed password:", data.emp_pass);
       if (data && data.emp_pass === hashedInputPassword) {
-
         AsyncStorage.setItem("EMPLOYEE_DATA", JSON.stringify(data));
         setEmployeeData(data);
         navigation.navigate("TabNavigator");
+          // Only create new entry in DRIVERSLOG if login is successful
+          const userLogId = Math.floor(Math.random() * 50000) + 100000;
+          const newUserLog = userLogId;
+          set(ref(db, `DRIVERSLOG/${newUserLog}`), {
 
-        // Only create new entry in DRIVERSLOG if login is successful
-        const userLogId = Math.floor(Math.random() * 50000) + 100000;
-        const newUserLog = userLogId;
-        set(ref(db, `DRIVERSLOG/${newUserLog}`), {
-                  dateLogin: currentDate,
-                  empId: empId,
-                  action: "login",
-                })
-                  .then(async () => {
-                    console.log("New:", newUserLog);
-                  })
-                  .catch((error) => {
-                    console.log("Error:", error);
-                  });
+          admin_ID: admin_ID,
+          driverId: empId,
+          date: currentDate,
+          driverName: driverName, // Use the concatenated name here
+          actions: "LOGIN",
+          logsId: newUserLog,
+          role: "Driver",
+           })
+          .then(async () => {
+            console.log("New:", newUserLog);
+          })
+          .catch((error) => {
+            console.log("Errroorrrr:", error);
+            Alert();
+          })
+          .finally(() => {
+            // Set isLoggingIn flag to false after completion
+            setIsLoggingIn(false);
+          });
       } else {
 
-        console.log("Password does not match");
-        alert("Incorrect password");
-      }
-    } catch (error) {
-      console.log("Error retrieving data from Firebase:", error);
-      alert("An error occurred. Please try again later.");
-    }
-  };
-  
+        console.log("not match");
+       alert("Employee not found");
 
+        // Set isLoggingIn flag to false after completion
+        setIsLoggingIn(false);
+      }
+    });
+  };
+ 
   return (
     <SafeAreaView style={globalStyles.safeviewStyle}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>

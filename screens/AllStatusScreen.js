@@ -266,22 +266,22 @@ export default function AllStatusScreen() {
       .catch((error) => {
         console.log("Error updating order status", error);
       });
-
     const userLogId = Math.floor(Math.random() * 50000) + 100000;
     const newUserLog = userLogId;
     // Read the data from the orderRef reference
     get(orderRef)
       .then((snapshot) => {
         const orderData = snapshot.val();
-        //console.log("Line 172", orderData.admin_ID);
+        console.log("Line 172", orderData);
         // Set the properties in USERSLOG table using the data from ORDER table
         set(ref(db, `DRIVERSLOG/${newUserLog}`), {
-          dateDelivered: currentDate,
-          orderId: orderId,
+          date: currentDate,
+          logsId: newUserLog,
           driverId: orderData.driverId,
+          driverName: employeeData.emp_firstname + " " + employeeData.emp_lastname,
           admin_ID: orderData.admin_ID,
-          cusId: orderData.cusId,
           actions: newStatus, // Add the "actions" property with the new status
+          role: "Driver"
         })
           .then(async () => {
             console.log("New:", newUserLog);

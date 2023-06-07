@@ -190,40 +190,40 @@ export default function OutforDelivery() {
       .catch((error) => {
         console.log("Error updating order status", error);
       });
-    const userLogId = Math.floor(Math.random() * 50000) + 100000;
-    const newUserLog = userLogId;
-
-    // Read the data from the orderRef reference
-    get(orderRef)
-      .then((snapshot) => {
-        const orderData = snapshot.val();
-        //console.log("Line 172", orderData.admin_ID);
-        // Set the properties in USERSLOG table using the data from ORDER table
-        set(ref(db, `DRIVERSLOG/${newUserLog}`), {
-          dateDelivered: currentDate,
-          orderId: orderId,
-          driverId: orderData.driverId,
-          admin_ID: orderData.admin_ID,
-          cusId: orderData.cusId,
-          actions: newStatus, // Add the "actions" property with the new status
+      const userLogId = Math.floor(Math.random() * 50000) + 100000;
+      const newUserLog = userLogId;
+      // Read the data from the orderRef reference
+      get(orderRef)
+        .then((snapshot) => {
+          const orderData = snapshot.val();
+          console.log("Line 172", orderData);
+          // Set the properties in USERSLOG table using the data from ORDER table
+          set(ref(db, `DRIVERSLOG/${newUserLog}`), {
+            date: currentDate,
+            logsId: newUserLog,
+            driverId: orderData.driverId,
+            driverName: employeeData.emp_firstname + " " + employeeData.emp_lastname,
+            admin_ID: orderData.admin_ID,
+            actions: newStatus, // Add the "actions" property with the new status
+            role: "Driver"
+          })
+            .then(async () => {
+              console.log("New:", newUserLog);
+            })
+            .catch((error) => {
+              console.log("Errroorrrr:", error);
+              Alert();
+            })
+            .finally(() => {
+              // Set isLoggingIn flag to false after completion
+              setIsLoggingIn(false);
+            });
         })
-          .then(async () => {
-            console.log("New:", newUserLog);
-          })
-          .catch((error) => {
-            console.log("Errroorrrr:", error);
-            Alert();
-          })
-          .finally(() => {
-            // Set isLoggingIn flag to false after completion
-            setIsLoggingIn(false);
-          });
-      })
-      .catch((error) => {
-        console.log("Error reading order data", error);
-      });
-  };
-
+        .catch((error) => {
+          console.log("Error reading order data", error);
+        });
+    };
+    
   async function sendNotification(orderId, newStatus) {
     console.log("Line 136", orderId);
     console.log("New Status:", newStatus);
