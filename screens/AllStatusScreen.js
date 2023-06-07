@@ -83,6 +83,7 @@ export default function AllStatusScreen() {
 
       // console.log("LINE 125--->MAP SCREEN---> CUSTOMER DATA INFORMATION", customerDatainfo); //test if successfully fetch the datas in UserInformation
       setUserInformation(customerDatainfo);
+      console.log("line 88", customerDatainfo);
     });
   }, []);
 
@@ -123,16 +124,19 @@ export default function AllStatusScreen() {
           OrderInformation.forEach((order) => {
             const customer = CustomerInformation.find(
               (cust) => cust.cusId === order.cusId
+
             );
             if (customer) {
               if (
                 order.order_newDeliveryAddressOption === "Same as Home Address"
               ) {
+
                 order.customerLatitude = customer.lattitudeLocation;
                 order.customerLongitude = customer.longitudeLocation;
                 order.customerAddress = customer.address;
                 order.customerPhone = customer.phoneNumber;
                 order.fullName = customer.firstName + " " + customer.lastName;
+
               } else if (
                 order.order_newDeliveryAddressOption === "New Delivery Address"
               ) {
@@ -143,8 +147,10 @@ export default function AllStatusScreen() {
                 order.customerAddress = order.order_newDeliveryAddress.address;
                 order.customerPhone =
                   order.order_newDeliveryAddress.order_newDeliveryAddContactNumber;
+
                 order.fullName = customer.firstName + " " + customer.lastName;
               }
+
             }
           });
           setOrderInfo(OrderInformation);
@@ -193,6 +199,7 @@ export default function AllStatusScreen() {
       updates.datePaymentReceived = currentDate;
       updates.paymentReceivedBy =
         employeeData.emp_firstname + " " + employeeData.emp_lastname;
+
 
       // Fetch the order data before creating a new scheduled notification
       get(orderRef)
@@ -248,6 +255,7 @@ export default function AllStatusScreen() {
         .catch((error) => {
           console.log("Error reading order data", error);
         });
+
     }
 
     update(orderRef, updates)
@@ -729,11 +737,13 @@ export default function AllStatusScreen() {
                         // Update the onPress function to only allow button press if order status is "Delivered"
                         onPress={() => {
                           if (item.order_OrderStatus === "Delivered") {
+
                             handleStatusUpdate(
                               item.id,
                               "Payment Received",
                               item.order_overAllQuantities
                             );
+
                           }
                         }}
                         // Update the disabled property to only disable the button if the order status is not "Delivered"
