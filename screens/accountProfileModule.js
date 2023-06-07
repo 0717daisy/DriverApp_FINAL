@@ -168,12 +168,18 @@ export default function AccountProfileModule({ navigation }) {
 
       // Save the user log data
       const newUserLogId = Math.floor(Math.random() * 50000) + 100000;
+      const driverName = employeeData.emp_firstname + " " + employeeData.emp_lastname;
+      const admin_ID = employeeData.adminId;
       const newUserLog = newUserLogId;
 
       set(ref(db, `DRIVERSLOG/${newUserLog}`), {
-        dateLogout: formattedDate, // Set the logout date and time
-        empId: empId, // Set the current logged-in employee ID
-        action:"logout",
+        date: formattedDate, // Set the logout date and time
+        driverId: empId, // Set the current logged-in employee ID
+        driverName:  driverName,
+        admin_ID: admin_ID,
+        actions:"LOGOUT",
+        logsId: newUserLog,
+        role:"Driver",
       })
         .then(async () => {
           console.log("New:", newUserLog);
