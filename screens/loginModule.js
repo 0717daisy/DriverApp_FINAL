@@ -143,7 +143,8 @@ export default function LoginModule({ navigation }) {
       const hashedInputPassword = SHA256(empPassword).toString();
       // console.log("Hashed input password:", hashedInputPassword);
       //console.log("Stored hashed password:", data.emp_pass);
-      if (data && data.emp_pass === hashedInputPassword) {
+      if (data && data.emp_pass === hashedInputPassword && data.emp_role === "Driver") 
+      {
         AsyncStorage.setItem("EMPLOYEE_DATA", JSON.stringify(data));
         setEmployeeData(data);
         navigation.navigate("TabNavigator");
