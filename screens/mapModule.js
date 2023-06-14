@@ -21,7 +21,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import MapViewDirections from "react-native-maps-directions";
 
 //export const mapRef=React.createRef();
-export default function MapModule({navigation}) {
+export default function MapModule({ navigation }) {
   const [employee, setEmployeeData] = useState([]); //state variable for Employee information, This variable hols the data of Employee
   const [adminIDofEmployee, setAdminIDEmp] = useState(""); // state Variable for holding the Admin ID of which Admin does the driver belongs
   const [employeeId, setEmpID] = useState(""); // state Variable for holding the Employee ID
@@ -36,7 +36,6 @@ export default function MapModule({navigation}) {
           //console.log("inside this storages1", data);
           const parsedData = JSON.parse(data);
           setEmployeeData(parsedData);
-
 
           const AdminIDofEmployee = JSON.parse(data).adminId; //extract the admin ID of the Employee
           const EmployeeId = JSON.parse(data).emp_id; //extract the employee ID
@@ -92,8 +91,8 @@ export default function MapModule({navigation}) {
             id: key,
             ...data[key],
           }));
-          console.log("line 90",orderDataInfo)
-        
+          //  console.log("line 90",orderDataInfo)
+
           const acceptedOrders = orderDataInfo.filter(
             (order) =>
               (order.order_OrderStatus === "Accepted" ||
@@ -102,13 +101,11 @@ export default function MapModule({navigation}) {
                   order.order_OrderStatus === "Received Order" &&
                   order.order_OrderStatus === "Payment Received" &&
                   order.order_OrderStatus !== "Delivered" &&
-
                   order.driverId === employeeId)) &&
               order.order_OrderTypeValue !== "PickUp"
-
           );
-          
-            console.log("line 1121", acceptedOrders);
+
+          //console.log("line 1121", acceptedOrders);
 
           // Fetch customer information and add to each order object
           acceptedOrders.forEach((order) => {
@@ -121,7 +118,7 @@ export default function MapModule({navigation}) {
               ) {
                 order.customerLatitude = customer.lattitudeLocation;
                 order.customerLongitude = customer.longitudeLocation;
-                
+
                 order.customerAddress = customer.address;
               } else {
                 // Add new delivery address information
@@ -130,6 +127,7 @@ export default function MapModule({navigation}) {
                 order.customerAddress = order.order_newDeliveryAddress;
                 order.receiverContactNumber =
                   order.order_newDeliveryAddContactNumber;
+
                 order.newdeliveryaddLandmark =
                   order.order_newDeliveryAddLandmark;
               }
@@ -157,9 +155,8 @@ export default function MapModule({navigation}) {
   const [markerPosition, setMarkerPosition] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
   //console.log("line 146",location);
-
+  const [title, setTitle] = useState("My Location");
   const mapRef = useRef(null);
-
 
   //get user's/driver location
   useEffect(() => {
@@ -167,7 +164,6 @@ export default function MapModule({navigation}) {
     let interval;
     let isMounted = true;
     let previousLocation = null;
-  
 
     const getLocation = async () => {
       let { status } = await Location.requestBackgroundPermissionsAsync();
@@ -176,9 +172,8 @@ export default function MapModule({navigation}) {
         return;
       }
 
-  
       subscription = await Location.watchPositionAsync(
-        { accuracy: Location.Accuracy.Balanced},
+        { accuracy: Location.Accuracy.Balanced },
         (location) => {
           if (isMounted) {
             setLocation(location);
@@ -190,15 +185,14 @@ export default function MapModule({navigation}) {
         }
       );
     };
-  
+
     getLocation();
-  
+
     interval = setInterval(() => {
       getLocation();
     }, 30000);
-  
+
     return () => {
-      
       isMounted = false;
       if (subscription) {
         subscription.remove();
@@ -206,14 +200,13 @@ export default function MapModule({navigation}) {
       clearInterval(interval);
     };
   }, []);
-  
 
   //when click the marker of the customer it will create an polyline
   const [polylineCoordsDriverToCustomer, setpolylineCoordsDriverToCustomer] =
     useState([]);
 
   const handleCustomerMarkerPress = (order, location) => {
-    console.log("line 147", order.id);
+    // console.log("line 147", order.id);
     //addLongitude
     const polylineCoordinates = [
       {
@@ -225,7 +218,6 @@ export default function MapModule({navigation}) {
         longitude: order?.customerLongitude || 0,
       },
     ];
-
 
     // Add your current location to the beginning of the polyline
     if (location && location.coords) {
@@ -249,27 +241,26 @@ export default function MapModule({navigation}) {
     if (!employeeId || !location || !location.coords) {
       return;
     }
-  
+
     const updateEmployeeLocation = async () => {
       try {
         const ordersRef = ref(db, "EMPLOYEES/");
         const orderRef = child(ordersRef, employeeId.toString());
-        
+
         await update(orderRef, {
           latitude: location.coords.latitude,
           longitude: location.coords.longitude,
         });
-        
+
         // console.log("Update Success");
       } catch (error) {
         console.log("Error updating", error);
       }
     };
-  
+
     updateEmployeeLocation();
   }, [employeeId, location]);
-  
-  
+
   // useEffect(() => {
   //   //console.log("Admin ID of this Employee", employeeId);
   //   if (!employeeId || !location || !location.coords) {
@@ -295,7 +286,7 @@ export default function MapModule({navigation}) {
   //     if (!employeeId || !location || !location.coords) {
   //       return;
   //     }
-  
+
   //     if (
   //       !previousLocation ||
   //       Math.abs(location.coords.latitude - previousLocation.coords.latitude) > 0.0001 ||
@@ -310,21 +301,18 @@ export default function MapModule({navigation}) {
   //         .then(() => {
   //           // console.log("Update Success");
   //           setPreviousLocation(location); // Update the previous location
-  
+
   //         })
   //         .catch((error) => {
   //           console.log("Error updating", error);
   //         });
   //     }
   //   }, 15000); // 30000 milliseconds = 15 seconds
-  
+
   //   return () => {
   //     clearInterval(interval);
   //   };
   // }, [employeeId, location, previousLocation]);
-  
-  
-
 
   return (
     <View style={styles.container}>
@@ -386,11 +374,10 @@ export default function MapModule({navigation}) {
           >
             <FontAwesome name="motorcycle" size={23} color="yellow" />
           </Marker>
-          {orderInformation &&
+          {/* {orderInformation &&
             orderInformation.length > 0 &&
             orderInformation.map((order) => (
               <Marker
-              
                 key={order.id}
                 coordinate={{
                   latitude: order.customerLatitude,
@@ -403,9 +390,13 @@ export default function MapModule({navigation}) {
                 calloutOffset={{ y: 0 }}
                 calloutVisible={true}
               >
-                <Callout tooltip={true} stopPropagation={true} onPress={()=>{
-                  navigation.navigate("Accepted");
-                }}>
+                <Callout
+                  tooltip={true}
+                  stopPropagation={true}
+                  onPress={() => {
+                    navigation.navigate("Accepted");
+                  }}
+                >
                   <View style={styles.callout}>
                     <Text style={styles.calloutText}>
                       Ordered from {order.order_StoreName}
@@ -417,7 +408,7 @@ export default function MapModule({navigation}) {
                   </View>
                 </Callout>
               </Marker>
-            ))}
+            ))} */}
 
           {polylineCoordsDriverToCustomer.length >= 2 && (
             <MapViewDirections

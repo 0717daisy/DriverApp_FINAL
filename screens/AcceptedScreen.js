@@ -11,8 +11,6 @@ import React, { useState, useEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { db } from "../firebaseConfig";
 
-
-
 import {
   ref,
   onValue,
@@ -42,7 +40,7 @@ export default function AcceptedScreen() {
   const [employeeData, setEmployeeData] = useState();
   const [customerId, setCustomerId] = useState(null);
   console.log("Driver:", customerId);
-  
+
   const [adminID, setAdminID] = useState("");
   const [customerData, setCustomerData] = useState("");
   const [currentDate, setCurrentDate] = useState("");
@@ -84,12 +82,12 @@ export default function AcceptedScreen() {
   }, []);
 
   const [CustomerInformation, setUserInformation] = useState([]);
-  
+
   useEffect(() => {
     console.log("driver", adminID);
     const orderRef = ref(db, "ORDERS/");
     const Orderquery = query(orderRef, orderByChild("cusId"));
-   // console.log("123123",Orderquery);
+    // console.log("123123",Orderquery);
     onValue(
       Orderquery,
       (snapshot) => {
@@ -114,32 +112,34 @@ export default function AcceptedScreen() {
               console.log("date", dateA);
               return dateA - dateB;
             });
-          OrderInformation.forEach((order) => {
-            if (
-              order.order_newDeliveryAddressOption === "Same as Home Address"
-            ) {
+            OrderInformation.forEach((order) => {
               const customer = CustomerInformation.find(
                 (cust) => cust.cusId === order.cusId
               );
               if (customer) {
-                order.customerLatitude = customer.lattitudeLocation;
-                order.customerLongitude = customer.longitudeLocation;
-                order.customerAddress = customer.address;
-                order.customerPhone = customer.phoneNumber;
-                order.fullName = customer.firstName + " " + customer.lastName;
+                if (
+                  order.order_newDeliveryAddressOption === "Same as Home Address"
+                ) {
+                  order.customerLatitude = customer.lattitudeLocation;
+                  order.customerLongitude = customer.longitudeLocation;
+                  order.customerAddress = customer.address;
+                  order.customerPhone = customer.phoneNumber;
+                  order.fullName = customer.firstName + " " + customer.lastName;
+                } else if (
+                  order.order_newDeliveryAddressOption === "New Delivery Address"
+                ) {
+                  order.customerLatitude =
+                    order.order_newDeliveryAddress.latitude;
+                  order.customerLongitude =
+                    order.order_newDeliveryAddress.longitude;
+                  order.customerAddress = order.order_newDeliveryAddress.address;
+                  order.customerPhone =
+                    order.order_newDeliveryAddress.order_newDeliveryAddContactNumber;
+                  order.fullName = customer.firstName + " " + customer.lastName;
+                }
               }
-            } else if (
-              order.order_newDeliveryAddressOption === "New Delivery Address"
-            ) {
-              order.customerLatitude = order.order_newDeliveryAddress.latitude;
-              order.customerLongitude =
-                order.order_newDeliveryAddress.longitude;
-              order.customerAddress = order.order_newDeliveryAddress.address;
-              order.customerPhone =
-                order.order_newDeliveryAddress.order_newDeliveryAddContactNumber;
-            }
-          });
-          setOrderInfo(OrderInformation);
+            });
+            setOrderInfo(OrderInformation);
           console.log("OrderInformation", OrderInformation);
         } else {
           console.log("No orders found");
@@ -149,7 +149,7 @@ export default function AcceptedScreen() {
         console.log("Error fetching orders", error);
       }
     );
-  }, [adminID, CustomerInformation,customerId]);
+  }, [adminID, CustomerInformation, customerId]);
 
   const [orderInfo, setOrderInfo] = useState([]);
   useEffect(() => {
@@ -175,7 +175,7 @@ export default function AcceptedScreen() {
     const updates = {
       order_OrderStatus: newStatus,
     };
-  
+
     // Add the appropriate date property based on the new status
     if (newStatus === "Out for Delivery") {
       updates.dateOrderOutforDelivery = currentDate;
@@ -184,7 +184,7 @@ export default function AcceptedScreen() {
     } else if (newStatus === "Payment Received") {
       updates.datePaymentReceived = currentDate;
     }
-  
+
     update(orderRef, updates)
       .then(() => {
         console.log("Order status updated successfully");
@@ -193,40 +193,40 @@ export default function AcceptedScreen() {
       .catch((error) => {
         console.log("Error updating order status", error);
       });
-
-    const userLogId = Math.floor(Math.random() * 50000) + 100000;
-    const newUserLog = userLogId;
-
-    // Read the data from the orderRef reference
-    get(orderRef)
-      .then((snapshot) => {
-        const orderData = snapshot.val();
-        //console.log("Line 172", orderData.admin_ID);
-        // Set the properties in USERSLOG table using the data from ORDER table
-        set(ref(db, `DRIVERSLOG/${newUserLog}`), {
-          dateDelivered: currentDate,
-          orderId: orderId,
-          driverId: orderData.driverId,
-          admin_ID: orderData.admin_ID,
-          cusId: orderData.cusId,
-          actions: newStatus, // Add the "actions" property with the new status
+      
+      const userLogId = Math.floor(Math.random() * 50000) + 100000;
+      const newUserLog = userLogId;
+      // Read the data from the orderRef reference
+      get(orderRef)
+        .then((snapshot) => {
+          const orderData = snapshot.val();
+          console.log("Line 172", orderData);
+          // Set the properties in USERSLOG table using the data from ORDER table
+          set(ref(db, `DRIVERSLOG/${newUserLog}`), {
+            date: currentDate,
+            logsId: newUserLog,
+            driverId: orderData.driverId,
+            driverName: employeeData.emp_firstname + " " + employeeData.emp_lastname,
+            admin_ID: orderData.admin_ID,
+            actions: newStatus, // Add the "actions" property with the new status
+            role: "Driver"
+          })
+            .then(async () => {
+              console.log("New:", newUserLog);
+            })
+            .catch((error) => {
+              console.log("Errroorrrr:", error);
+              Alert();
+            })
+            .finally(() => {
+              // Set isLoggingIn flag to false after completion
+              setIsLoggingIn(false);
+            });
         })
-          .then(async () => {
-            console.log("New:", newUserLog);
-          })
-          .catch((error) => {
-            console.log("Errroorrrr:", error);
-            Alert();
-          })
-          .finally(() => {
-            // Set isLoggingIn flag to false after completion
-            setIsLoggingIn(false);
-          });
-      })
-      .catch((error) => {
-        console.log("Error reading order data", error);
-      });
-  };
+        .catch((error) => {
+          console.log("Error reading order data", error);
+        });
+    };
 
   async function sendNotification(orderId, newStatus) {
     console.log("Line 136", orderId);
@@ -250,7 +250,6 @@ export default function AcceptedScreen() {
     const notificationKeys = Object.keys(notificationSnapshot.val());
     const maxKey = Math.max(...notificationKeys);
     const newKey = maxKey + 1;
-
 
     // Create new notification object with generated key
     const newNotification = {
@@ -477,7 +476,8 @@ export default function AcceptedScreen() {
                               //flex: 1,
                             }}
                           >
-                             {product.pro_refillQty} {product.pro_refillUnitVolume}
+                            {product.pro_refillQty}{" "}
+                            {product.pro_refillUnitVolume}
                           </Text>
                         </View>
 
@@ -651,26 +651,30 @@ export default function AcceptedScreen() {
                             borderRadius: 10,
                             alignItems: "center",
                           },
-                           // Update the disabled property to only disable the button if the order status is not "Delivered"
-                        {
-                          opacity:
-                            item.order_OrderStatus === "Accepted" ||
-                            item.order_OrderStatus === "Out for Delivery" ||
-                            item.order_OrderStatus === "Payment Received" ||
-                            item.orderPaymentMethod === "Gcash" ||
-                            item.orderPaymentMethod === "Points"
-                            ? 0.5
-                            : 1,
-                      },
-                    ]}
-                    // Update the onPress function to only allow button press if order status is "Delivered"
-                    onPress={() => {
-                      if (item.order_OrderStatus === "Delivered") {
-                        handleStatusUpdate(item.id, "Payment Received");
-                      }
-                    }}
-                    // Update the disabled property to only disable the button if the order status is not "Delivered"
-                    disabled={item.order_OrderStatus !== "Delivered" || item.orderPaymentMethod === "Gcash" ||  item.orderPaymentMethod === "Points"}
+                          // Update the disabled property to only disable the button if the order status is not "Delivered"
+                          {
+                            opacity:
+                              item.order_OrderStatus === "Accepted" ||
+                              item.order_OrderStatus === "Out for Delivery" ||
+                              item.order_OrderStatus === "Payment Received" ||
+                              item.orderPaymentMethod === "Gcash" ||
+                              item.orderPaymentMethod === "Points"
+                                ? 0.5
+                                : 1,
+                          },
+                        ]}
+                        // Update the onPress function to only allow button press if order status is "Delivered"
+                        onPress={() => {
+                          if (item.order_OrderStatus === "Delivered") {
+                            handleStatusUpdate(item.id, "Payment Received");
+                          }
+                        }}
+                        // Update the disabled property to only disable the button if the order status is not "Delivered"
+                        disabled={
+                          item.order_OrderStatus !== "Delivered" ||
+                          item.orderPaymentMethod === "Gcash" ||
+                          item.orderPaymentMethod === "Points"
+                        }
                       >
                         <Text style={styles.buttonText}>Payment Received</Text>
                       </TouchableOpacity>
