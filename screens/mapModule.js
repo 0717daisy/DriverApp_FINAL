@@ -93,23 +93,7 @@ export default function MapModule({navigation}) {
             ...data[key],
           }));
           console.log("line 90",orderDataInfo)
-          // const acceptedOrders = orderDataInfo.filter(
-          //   (order) =>
-          //     // order.order_OrderStatus === "Accepted" ||
-          //     // (order.order_OrderStatus === "Out for Delivery" &&
-          //     //   order.order_OrderTypeValue === "Delivery" &&
-          //     //   order.order_OrderTypeValue === "Received Order" &&
-          //     //   order.order_OrderTypeValue === "Payment Received" &&
-          //     //   order.order_OrderStatus !== "Delivered" &&
-          //     //   order.driverId === employeeId)
-          //     (order.order_OrderStatus === "Accepted" ||
-          //     order.order_OrderStatus === "Out for Delivery" ||
-          //     order.order_OrderStatus === "Received Order" ||
-          //     order.order_OrderStatus === "Payment Received") &&
-          //     order.driverId === employeeId
-
-               
-          // );
+        
           const acceptedOrders = orderDataInfo.filter(
             (order) =>
               (order.order_OrderStatus === "Accepted" ||
@@ -151,25 +135,8 @@ export default function MapModule({navigation}) {
               }
             }
           });
-
-          //const lastFiltered=acceptedOrders.filter((order)=>order.driverId===employeeId);
-
-
-         //console.log("LINE 130", acceptedOrders);
-
-          // console.log(
-          //   "MAP SCREEN---> ACCEPTED ORDER DATA INFORMATION",
-          //   acceptedOrders.length
-          // );
-
           setOrderInformation(acceptedOrders);
           if (acceptedOrders.length === 0) {
-            //alert("No orders at the moment");
-            // Alert.alert("Note", "No orders at the moment", [
-            //   {
-            //     text: "OK",
-            //   },
-            // ]);
           }
         } else {
           setOrderInformation([]);
@@ -415,7 +382,7 @@ export default function MapModule({navigation}) {
             }}
             //coordinate={markerPosition}
             showCallout={true}
-            title={title}
+            title="My location"
           >
             <FontAwesome name="motorcycle" size={23} color="yellow" />
           </Marker>
