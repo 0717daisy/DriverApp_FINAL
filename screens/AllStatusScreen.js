@@ -326,12 +326,12 @@ export default function AllStatusScreen() {
     // Create new notification object with generated key
     const newNotification = {
       admin_ID: orderSnapshot.val().admin_ID,
-      body: `Your order is ${newStatus}.`,
+      body: `Order Status: ${newStatus}.`,
       cusId: customerId,
       notificationDate: currentDate,
       notificationID: newKey,
       orderID: orderId,
-      dateDelivered: currentDate,
+      // dateDelivered: currentDate,
       receiver: "Customer",
       sender: "Driver",
       status: "unread",
@@ -351,12 +351,12 @@ export default function AllStatusScreen() {
     // Create new notification object with generated key
     const newNotifications = {
       admin_ID: orderSnapshot.val().admin_ID,
-      body: `The order of customer ${customerId} is ${newStatus}.`,
+      body: `Customer ${customerId} Order Status: ${newStatus}.`,
       cusId: customerId,
       notificationDate: currentDate,
       notificationID: newKeys,
       orderID: orderId,
-      dateDelivered: currentDate,
+     // dateDelivered: currentDate,
       receiver: "Admin",
       sender: "Driver",
       status: "unread",

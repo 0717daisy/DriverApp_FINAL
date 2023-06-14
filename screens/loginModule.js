@@ -136,16 +136,15 @@ export default function LoginModule({ navigation }) {
     setIsLoggingIn(true);
     const starCountRef = ref(db, "EMPLOYEES/" + empId);
     console.log("starCountRef:", starCountRef);
-  
-    try {
-      const snapshot = await get(starCountRef);
+    onValue(starCountRef, (snapshot) => {
       const data = snapshot.val();
   
       //console.log("inside", data);
       const hashedInputPassword = SHA256(empPassword).toString();
       // console.log("Hashed input password:", hashedInputPassword);
       //console.log("Stored hashed password:", data.emp_pass);
-      if (data && data.emp_pass === hashedInputPassword) {
+      if (data && data.emp_pass === hashedInputPassword && data.emp_role === "Driver") 
+      {
         AsyncStorage.setItem("EMPLOYEE_DATA", JSON.stringify(data));
         setEmployeeData(data);
         navigation.navigate("TabNavigator");
@@ -156,16 +155,6 @@ export default function LoginModule({ navigation }) {
         const admin_ID = data.adminId;
         const newUserLog = userLogId;
         set(ref(db, `DRIVERSLOG/${newUserLog}`), {
-                  dateLogin: currentDate,
-                  empId: empId,
-                  action: "login",
-                })
-                  .then(async () => {
-                    console.log("New:", newUserLog);
-                  })
-                  .catch((error) => {
-                    console.log("Error:", error);
-                  });
           admin_ID: admin_ID,
           driverId: empId,
           date: currentDate,
@@ -174,29 +163,26 @@ export default function LoginModule({ navigation }) {
           logsId: newUserLog,
           role: "Driver",
         })
-          .then(async () => {
-            console.log("New:", newUserLog);
-          })
-          .catch((error) => {
-            console.log("Errroorrrr:", error);
-            Alert();
-          })
-          .finally(() => {
-            // Set isLoggingIn flag to false after completion
-            setIsLoggingIn(false);
-          });
-      } else {
-        console.log("not match");
-        alert("Employee not found");
-  
-        // Set isLoggingIn flag to false after completion
-        setIsLoggingIn(false);
-      }
-    } catch (error) {
-      console.log("Error retrieving data from Firebase:", error);
-      alert("An error occurred. Please try again later.");
+        .then(async () => {
+          console.log("New:", newUserLog);
+        })
+        .catch((error) => {
+          console.log("Errroorrrr:", error);
+          Alert();
+        })
+        .finally(() => {
+          // Set isLoggingIn flag to false after completion
+          setIsLoggingIn(false);
+        });
+    } else {
+      console.log("not match");
+      alert("Employee not found");
+
+      // Set isLoggingIn flag to false after completion
+      setIsLoggingIn(false);
     }
-  };
+  });
+};
   
 
   
