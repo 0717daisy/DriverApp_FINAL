@@ -370,7 +370,7 @@ export default function MapModule({ navigation }) {
             }}
             //coordinate={markerPosition}
             showCallout={true}
-            title={title}
+            title="My location"
           >
             <FontAwesome name="motorcycle" size={23} color="yellow" />
           </Marker>
